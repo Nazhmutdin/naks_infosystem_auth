@@ -10,7 +10,7 @@ from models import Base
 from funcs import get_refresh_tokens, get_users, get_request_refresh_tokens
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="module", autouse=True)
 def prepare_db():
     assert Settings.DB_NAME() == "rhi_test"
 
