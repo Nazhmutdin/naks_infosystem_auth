@@ -12,7 +12,7 @@ class Settings:
 
     @classmethod
     def DB_NAME(cls) -> str:
-        return os.getenv("DATABASE_NAME")
+        return os.getenv("AUTH_DATABASE_NAME")
     
     
     @classmethod
@@ -22,7 +22,7 @@ class Settings:
 
     @classmethod
     def HOST(cls) -> str:
-        return os.getenv("HOST")
+        return os.getenv("AUTH_HOST")
     
 
     @classmethod

@@ -6,6 +6,7 @@ from sqlalchemy.orm import Mapped, DeclarativeBase, attributes
 from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.schema import Index
 import sqlalchemy as sa
+from naks_library.funcs import is_uuid
 
 
 __all__ = [
@@ -136,14 +137,10 @@ class UserModel(Base):
 
     @classmethod
     def _get_column(cls, ident: str | uuid.UUID) -> attributes.InstrumentedAttribute:
-        if isinstance(ident, uuid.UUID):
-            return UserModel.ident
+        if is_uuid(ident):
+            return cls.ident
         
-        try:
-            uuid.UUID(ident)
-            return UserModel.ident
-        except:
-            return UserModel.login
+        return cls.login
 
 
 class RefreshTokenModel(Base):
@@ -165,11 +162,7 @@ class RefreshTokenModel(Base):
 
     @classmethod
     def _get_column(cls, ident: str | uuid.UUID) -> attributes.InstrumentedAttribute:
-        if isinstance(ident, uuid.UUID):
+        if is_uuid(ident):
             return RefreshTokenModel.ident
         
-        try:
-            uuid.UUID(ident)
-            return RefreshTokenModel.ident
-        except:
-            return RefreshTokenModel.token
+        return RefreshTokenModel.token

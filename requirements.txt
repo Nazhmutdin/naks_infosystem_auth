@@ -23,7 +23,7 @@ Mako==1.3.5
 markdown-it-py==3.0.0
 MarkupSafe==2.1.5
 mdurl==0.1.2
-naks_library @ https://github.com/Nazhmutdin/naks_library/archive/master.zip#sha256=ecc11661bbed27b6dc63bc6aad84143b06813ef16a7c7c18e8467caa4db197d7
+naks_library @ https://github.com/Nazhmutdin/naks_library/archive/master.zip#sha256=5f59d91fc841ef1eaeeb547dd0e9d3de9dc9140b1f746454d54c8822b75cd125
 orjson==3.10.5
 packaging==24.1
 pluggy==1.5.0
