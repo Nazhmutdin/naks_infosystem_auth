@@ -12,7 +12,7 @@ from funcs import get_refresh_tokens, get_users, get_request_refresh_tokens
 
 @pytest.fixture(scope="module", autouse=True)
 def prepare_db():
-    assert Settings.DB_NAME() == "rhi_test"
+    assert Settings.DB_NAME() == "rhi_test_auth"
 
     async def start_db():
         async with engine.begin() as conn:

@@ -128,3 +128,11 @@ class TestAuthEndpoints:
 
         assert res.cookies.get("refresh_token") != refresh_token
 
+
+    def test_validate_access_token(self):
+
+        res = client.post(
+            "api/auth/v1/validate-access",
+        )
+
+        assert res.status_code == 200

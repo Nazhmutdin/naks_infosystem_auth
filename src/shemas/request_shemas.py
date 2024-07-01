@@ -6,7 +6,7 @@ from naks_library.base_request_shema import *
 from naks_library import to_datetime, is_uuid
 from pydantic import Field, field_validator
 
-from utils.funcs import validate_refresh_token
+from src.utils.funcs import validate_refresh_token
 from src.models import *
 
 

@@ -1,7 +1,9 @@
-from fastapi import APIRouter, Response, Depends
+from fastapi import APIRouter, Response, Request, Depends
 
+from src.services.auth_service import AuthService
 from src.api.v1.dependencies import authorize_dependency, authenticatе_dependency, update_tokens_dependency, AccessToken, RefreshToken
 from src.utils.funcs import refresh_token_expiration_dt, access_token_expiration_dt
+from src._types import AccessTokenShema
 
 
 v1_router = APIRouter()
@@ -14,7 +16,7 @@ async def authorizate(
 
     response = Response()
 
-    response.set_cookie("refresh_token", tokens[0], httponly=True, secure=True, path="/auth", expires=refresh_token_expiration_dt())
+    response.set_cookie("refresh_token", tokens[0], httponly=True, secure=True, path="/api/auth", expires=refresh_token_expiration_dt())
     response.set_cookie("access_token", tokens[1], httponly=True, secure=True, path="/api/v1", expires=access_token_expiration_dt())
 
     return response
@@ -35,7 +37,35 @@ async def update_tokens(tokens: tuple[RefreshToken, AccessToken] = Depends(updat
     
     response = Response()
 
-    response.set_cookie("refresh_token", tokens[0], secure=True, httponly=True, path="/auth", expires=refresh_token_expiration_dt())
+    response.set_cookie("refresh_token", tokens[0], secure=True, httponly=True, path="/api/auth", expires=refresh_token_expiration_dt())
     response.set_cookie("access_token", tokens[1], secure=True, httponly=True, path="/api/v1", expires=access_token_expiration_dt())
 
     return response
+
+
+@v1_router.get("/validate-access")
+async def validate_access(request: Request) -> Response:
+    access_token = request.cookies.get("access_token")
+    service = AuthService()
+    
+    if not access_token:
+        return Response(
+            status_code=401
+        )
+    elif not service.validate_access_token(access_token):
+        return Response(
+            "invalid token",
+            403
+        )
+    else:
+        access_token = AccessTokenShema.from_token(access_token)
+
+        if access_token.is_expired:
+            return Response(
+                "token_expired",
+                403
+            )
+        else:
+            return Response(
+                status_code=200
+            )
