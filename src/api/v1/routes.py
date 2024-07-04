@@ -16,8 +16,8 @@ async def authorizate(
 
     response = Response()
 
-    response.set_cookie("refresh_token", tokens[0], httponly=True, secure=True, path="/api/auth", expires=refresh_token_expiration_dt())
-    response.set_cookie("access_token", tokens[1], httponly=True, secure=True, path="/api/v1", expires=access_token_expiration_dt())
+    response.set_cookie("refresh_token", tokens[0], httponly=True, path="/api/auth", expires=refresh_token_expiration_dt())
+    response.set_cookie("access_token", tokens[1], httponly=True, path="/api/v1", expires=access_token_expiration_dt())
 
     return response
 
@@ -27,7 +27,7 @@ async def authenticate(access_token: AccessToken = Depends(authenticatе_depende
     
     response = Response()
 
-    response.set_cookie("access_token", access_token, secure=True, httponly=True, path="/api/v1", expires=access_token_expiration_dt())
+    response.set_cookie("access_token", access_token, httponly=True, path="/api/v1", expires=access_token_expiration_dt())
 
     return response
 
@@ -37,8 +37,8 @@ async def update_tokens(tokens: tuple[RefreshToken, AccessToken] = Depends(updat
     
     response = Response()
 
-    response.set_cookie("refresh_token", tokens[0], secure=True, httponly=True, path="/api/auth", expires=refresh_token_expiration_dt())
-    response.set_cookie("access_token", tokens[1], secure=True, httponly=True, path="/api/v1", expires=access_token_expiration_dt())
+    response.set_cookie("refresh_token", tokens[0], httponly=True, path="/api/auth", expires=refresh_token_expiration_dt())
+    response.set_cookie("access_token", tokens[1], httponly=True, path="/api/v1", expires=access_token_expiration_dt())
 
     return response
 
