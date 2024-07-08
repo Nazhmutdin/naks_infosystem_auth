@@ -23,4 +23,4 @@ app.add_middleware(
 
 app = FastAPI()
 
-app.include_router(v1_router, prefix="/api/auth/v1")
+app.include_router(v1_router, prefix="/auth/v1")
