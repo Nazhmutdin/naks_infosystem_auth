@@ -4,6 +4,7 @@ from src.services.auth_service import AuthService
 from src.api.v1.dependencies import authorize_dependency, authenticatе_dependency, update_tokens_dependency, AccessToken, RefreshToken
 from src.utils.funcs import refresh_token_expiration_dt, access_token_expiration_dt
 from src._types import AccessTokenShema
+from src.settings import Settings
 
 
 v1_router = APIRouter()
@@ -16,8 +17,8 @@ async def authorizate(
 
     response = Response()
 
-    response.set_cookie("refresh_token", tokens[0], httponly=True, path="/auth", expires=refresh_token_expiration_dt())
-    response.set_cookie("access_token", tokens[1], httponly=True, path="/v1", expires=access_token_expiration_dt())
+    response.set_cookie("refresh_token", tokens[0], samesite="strict", domain=Settings.API_DOMAIN(), httponly=True, path="/auth", expires=refresh_token_expiration_dt())
+    response.set_cookie("access_token", tokens[1], samesite="strict", domain=Settings.API_DOMAIN(), httponly=True, path="/v1", expires=access_token_expiration_dt())
 
     return response
 
@@ -27,7 +28,7 @@ async def authenticate(access_token: AccessToken = Depends(authenticatе_depende
     
     response = Response()
 
-    response.set_cookie("access_token", access_token, httponly=True, path="/v1", expires=access_token_expiration_dt())
+    response.set_cookie("access_token", access_token, samesite="strict", domain=Settings.API_DOMAIN(), httponly=True, path="/v1", expires=access_token_expiration_dt())
 
     return response
 
@@ -37,8 +38,8 @@ async def update_tokens(tokens: tuple[RefreshToken, AccessToken] = Depends(updat
     
     response = Response()
 
-    response.set_cookie("refresh_token", tokens[0], httponly=True, path="/auth", expires=refresh_token_expiration_dt())
-    response.set_cookie("access_token", tokens[1], httponly=True, path="/v1", expires=access_token_expiration_dt())
+    response.set_cookie("refresh_token", tokens[0], samesite="strict", domain=Settings.API_DOMAIN(), httponly=True, path="/auth", expires=refresh_token_expiration_dt())
+    response.set_cookie("access_token", tokens[1], samesite="strict", domain=Settings.API_DOMAIN(), httponly=True, path="/v1", expires=access_token_expiration_dt())
 
     return response
 

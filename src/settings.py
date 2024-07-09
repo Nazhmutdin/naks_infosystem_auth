@@ -19,6 +19,16 @@ class Settings:
     def DB_PASSWORD(cls) -> str:
         return os.getenv("DATABASE_PASSWORD")
     
+    
+    @classmethod
+    def DOMAIN(cls) -> str:
+        return os.getenv("DOMAIN")
+    
+    
+    @classmethod
+    def API_DOMAIN(cls) -> str:
+        return os.getenv("API_DOMAIN")
+    
 
     @classmethod
     def HOST(cls) -> str:
