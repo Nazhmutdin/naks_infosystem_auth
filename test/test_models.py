@@ -162,8 +162,8 @@ class TestUserModel(BaseTestModel[UserShema]):
     @pytest.mark.parametrize(
         "ident, data",
         [
-            ("TestUser", {"name": "UpdatedName", "email": "hello@mail.ru"}),
-            ("eee02230b2f34440bb349480a809bb10", {"sign_dt": datetime(2024, 1, 11, 8, 38, 12, 906854), "is_superuser": False}),
+            ("TestUser1", {"name": "UpdatedName", "email": "hello@mail.ru"}),
+            ("755d4fe7-e898-4fb9-97ef-3de62ebf9313", {"sign_dt": datetime(2024, 1, 11, 8, 38, 12, 906854), "is_superuser": False}),
             ("TestUser6", {"login_dt": datetime(2024, 1, 1, 8, 38, 12, 906854)}),
         ]
     )
@@ -251,7 +251,7 @@ class TestRefreshTokenModel(BaseTestModel[RefreshTokenShema]):
         "ident, data",
         [
             ("f7e416d52ad542f38fb0e3947f673119", {"revoked": True}),
-            ("9bc43a9ac32d441bbb06b85768be362b", {"user_ident": UUID("72e38f60a025499db25c74aac04ca19b")}),
+            ("9bc43a9ac32d441bbb06b85768be362b", {"user_ident": UUID("755d4fe7-e898-4fb9-97ef-3de62ebf9313")}),
             ("c4b256677aac45a994ef5ee414f44772", {"exp_dt": datetime(2024, 6, 1, 8, 38, 12, 906854)}),
         ]
     )

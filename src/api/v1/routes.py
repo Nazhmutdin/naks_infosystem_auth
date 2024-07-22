@@ -17,8 +17,8 @@ async def authorizate(
 
     response = Response()
 
-    response.set_cookie("refresh_token", tokens[0], samesite="strict", domain=Settings.API_DOMAIN(), httponly=True, path="/auth", expires=refresh_token_expiration_dt())
-    response.set_cookie("access_token", tokens[1], samesite="strict", domain=Settings.API_DOMAIN(), httponly=True, path="/v1", expires=access_token_expiration_dt())
+    response.set_cookie("refresh_token", tokens[0], samesite="strict", domain=Settings.API_DOMAIN(), secure=True, httponly=True, path="/auth", expires=refresh_token_expiration_dt())
+    response.set_cookie("access_token", tokens[1], samesite="strict", domain=Settings.API_DOMAIN(), secure=True, httponly=True, path="/v1", expires=access_token_expiration_dt())
 
     return response
 
@@ -28,7 +28,7 @@ async def authenticate(access_token: AccessToken = Depends(authenticatе_depende
     
     response = Response()
 
-    response.set_cookie("access_token", access_token, samesite="strict", domain=Settings.API_DOMAIN(), httponly=True, path="/v1", expires=access_token_expiration_dt())
+    response.set_cookie("access_token", access_token, samesite="strict", domain=Settings.API_DOMAIN(), secure=True, httponly=True, path="/v1", expires=access_token_expiration_dt())
 
     return response
 
@@ -38,8 +38,8 @@ async def update_tokens(tokens: tuple[RefreshToken, AccessToken] = Depends(updat
     
     response = Response()
 
-    response.set_cookie("refresh_token", tokens[0], samesite="strict", domain=Settings.API_DOMAIN(), httponly=True, path="/auth", expires=refresh_token_expiration_dt())
-    response.set_cookie("access_token", tokens[1], samesite="strict", domain=Settings.API_DOMAIN(), httponly=True, path="/v1", expires=access_token_expiration_dt())
+    response.set_cookie("refresh_token", tokens[0], samesite="strict", domain=Settings.API_DOMAIN(), secure=True, httponly=True, path="/auth", expires=refresh_token_expiration_dt())
+    response.set_cookie("access_token", tokens[1], samesite="strict", domain=Settings.API_DOMAIN(), secure=True, httponly=True, path="/v1", expires=access_token_expiration_dt())
 
     return response
 
