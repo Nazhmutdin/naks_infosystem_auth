@@ -6,13 +6,15 @@ from pydantic import ValidationError
 import pytest
 
 from services.db_services import *
+from src.utils.DTOs import *
 from database import engine
 from shemas import *
 
 
 @pytest.mark.asyncio
-class TestUserDBService(BaseTestDBService[UserShema]):
+class TestUserDBService(BaseTestDBService):
     service = UserDBService(AsyncSession(engine))
+    __dto__ = UserData
     __create_shema__ = CreateUserShema
     __update_shema__ = UpdateUserShema
 
@@ -39,8 +41,8 @@ class TestUserDBService(BaseTestDBService[UserShema]):
     @pytest.mark.parametrize(
         "ident, data",
         [
-            ("TestUser", {"name": "UpdatedName", "email": "hello@mail.ru"}),
-            ("eee02230b2f34440bb349480a809bb10", {"sign_dt": "2024-01-17T13:38:12.906854", "is_superuser": False}),
+            ("TestUser1", {"name": "UpdatedName", "email": "hello@mail.ru"}),
+            ("755d4fe7e8984fb997ef3de62ebf9313", {"sign_dt": "2024-01-17T13:38:12.906854", "is_superuser": False}),
             ("TestUser6", {"login_dt": "2024-07-19T13:38:45.906854"}),
         ]
     )
@@ -51,8 +53,8 @@ class TestUserDBService(BaseTestDBService[UserShema]):
     @pytest.mark.parametrize(
         "ident, data, exception",
         [
-            ("TestUser", {"name": "UpdatedName", "email": "@mail.ru"}, ValidationError),
-            ("eee02230b2f34440bb349480a809bb10", {"sign_dt": "2024-11-17T13:38:12.906854", "is_superuser": "ggg"}, ValidationError),
+            ("TestUser1", {"name": "UpdatedName", "email": "@mail.ru"}, ValidationError),
+            ("755d4fe7e8984fb997ef3de62ebf9313", {"sign_dt": "2024-11-17T13:38:12.906854", "is_superuser": "ggg"}, ValidationError),
             ("TestUser6", {"login_dt": "2024-17-19T13:38:45.906854"}, ValidationError),
         ]
     )
@@ -69,10 +71,10 @@ class TestUserDBService(BaseTestDBService[UserShema]):
         await super().test_delete(users[index])
 
 
-
 @pytest.mark.asyncio
-class TestRefreshTokenDBService(BaseTestDBService[RefreshTokenShema]): 
+class TestRefreshTokenDBService(BaseTestDBService): 
     service = RefreshTokenDBService(AsyncSession(engine))
+    __dto__ = RefreshTokenData
     __create_shema__ = CreateRefreshTokenShema
     __update_shema__ = UpdateRefreshTokenShema
 
@@ -94,9 +96,9 @@ class TestRefreshTokenDBService(BaseTestDBService[RefreshTokenShema]):
     @pytest.mark.parametrize(
         "ident, data",
         [
-            ("01167611c3964222ae5263363c3b33f6", {"revoked": True}),
-            ("c4b256677aac45a994ef5ee414f44772", {"user_ident": UUID("72e38f60a025499db25c74aac04ca19b")}),
-            ("5f741f170c8045648e769e4fd63dba7e", {"exp_dt": "2024-06-01T13:38:12"}),
+            ("543417b0599140b1ab979798cce171e0", {"revoked": True}),
+            ("15910d47da2d425282c2b2d749124cd3", {"user_ident": UUID("b7416aebf670413fb848ce173bbe2ab0")}),
+            ("0a96a91daae641d4aa783a9fff6b2ce6", {"exp_dt": "2024-06-01T13:38:12"}),
         ]
     )
     async def test_update(self, ident: str, data: dict) -> None:
@@ -106,9 +108,9 @@ class TestRefreshTokenDBService(BaseTestDBService[RefreshTokenShema]):
     @pytest.mark.parametrize(
         "ident, data, exception",
         [
-            ("7b0d0e8a4f214fbbafd6f4a6f5cdd9e3", {"revoked": "hello"}, ValidationError),
-            ("c4b256677aac45a994ef5ee414f44772", {"user_ident": "72e38f60a024495c7c04ca19b"}, ValidationError),
-            ("f7e416d52ad542f38fb0e3947f673119", {"exp_dt": "ggg"}, ValidationError),
+            ("0a96a91daae641d4aa783a9fff6b2ce6", {"revoked": "hello"}, ValidationError),
+            ("b370730c403243d684418e8e6f5a6ce4", {"user_ident": "72e38f60a024495c7c04ca19b"}, ValidationError),
+            ("60224ef230134811a9953d0515d6e4f4", {"exp_dt": "ggg"}, ValidationError),
         ]
     )
     async def test_fail_update(self, ident: str, data: dict, exception) -> None:

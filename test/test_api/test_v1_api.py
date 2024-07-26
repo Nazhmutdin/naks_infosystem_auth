@@ -13,9 +13,9 @@ class TestAuthEndpoints:
     def test_failed_authenticate_by_expired_refresh_token(self):
 
         res = client.post(
-            "api/auth/v1/authenticate",
+            "auth/v1/authenticate",
             cookies={
-                "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJnZW5fZHQiOiIyMDI0LzA1LzI3LCAxMzozODoxMiIsImV4cF9kdCI6IjIwMjQvMDUvMjgsIDEzOjM4OjEyIiwiaWRlbnQiOiJjNGIyNTY2NzdhYWM0NWE5OTRlZjVlZTQxNGY0NDc3MiIsInVzZXJfaWRlbnQiOiJiN2I2Y2M4OTkzMWQ0NjBhOTJlNDAyNTczNGM5NjhlNCJ9.YhLWtS5wyE2p7SYp8xN_BK3WUfWLQhNdIrdZLS7f9Mc"
+                "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZGVudCI6IjU0MzQxN2IwNTk5MTQwYjFhYjk3OTc5OGNjZTE3MWUwIiwidXNlcl9pZGVudCI6IjI3NWEyMDI1OGUxNDRjYzliMWQxZWRhMTlhYjc3MzNiIiwiZ2VuX2R0IjoiMjAyNC8wNy8yMSwgMTc6MTA6MjUiLCJleHBfZHQiOiIyMDI0LzA3LzIyLCAxNzoxMDoyNSJ9.Ddi9rNGGU3AfqxwaGx-JHDOUphmKUwGOlfeDgd1gGQw"
             }
         )
 
@@ -26,9 +26,9 @@ class TestAuthEndpoints:
     def test_failed_authenticate_by_revoked_refresh_token(self):
 
         res = client.post(
-            "api/auth/v1/authenticate",
+            "auth/v1/authenticate",
             cookies={
-                "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJnZW5fZHQiOiIyMDI0LzA1LzI1LCAxMzozODoxMiIsImV4cF9kdCI6IjIwMjQvMDUvMjYsIDEzOjM4OjEyIiwiaWRlbnQiOiI1Zjc0MWYxNzBjODA0NTY0OGU3NjllNGZkNjNkYmE3ZSIsInVzZXJfaWRlbnQiOiJiN2I2Y2M4OTkzMWQ0NjBhOTJlNDAyNTczNGM5NjhlNCJ9.EZKAOi4Kp0mV3OJlBlclqdZ_YgPOhGfMfb2K-F9Zbbw"
+                "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZGVudCI6ImMzN2E4MzkwNzk5MjQ4OWViMzdmMmJlZTA2ZDAxMTVmIiwidXNlcl9pZGVudCI6Ijc1NWQ0ZmU3ZTg5ODRmYjk5N2VmM2RlNjJlYmY5MzEzIiwiZ2VuX2R0IjoiMjAyNC8wNy8yNSwgMTc6MTA6MjUiLCJleHBfZHQiOiIyMDI0LzA3LzI2LCAxNzoxMDoyNSJ9.OPpWPvbCSGNpBJh3QOcvL7FTKpK0GvWWBkoEZm_o_tI"
             }
         )
 
@@ -39,7 +39,7 @@ class TestAuthEndpoints:
     def test_failed_update_tokens_wothout_refresh_token(self):
 
         res = client.post(
-            "api/auth/v1/update-tokens",
+            "auth/v1/update-tokens",
             cookies={}
         )
 
@@ -50,9 +50,9 @@ class TestAuthEndpoints:
     def test_failed_update_tokens_by_revoked_refresh_token(self):
 
         res = client.post(
-            "api/auth/v1/update-tokens",
+            "auth/v1/update-tokens",
             cookies={
-                "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJnZW5fZHQiOiIyMDI0LzA1LzI1LCAxMzozODoxMiIsImV4cF9kdCI6IjIwMjQvMDUvMjYsIDEzOjM4OjEyIiwiaWRlbnQiOiI1Zjc0MWYxNzBjODA0NTY0OGU3NjllNGZkNjNkYmE3ZSIsInVzZXJfaWRlbnQiOiJiN2I2Y2M4OTkzMWQ0NjBhOTJlNDAyNTczNGM5NjhlNCJ9.EZKAOi4Kp0mV3OJlBlclqdZ_YgPOhGfMfb2K-F9Zbbw"
+                "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZGVudCI6ImMzN2E4MzkwNzk5MjQ4OWViMzdmMmJlZTA2ZDAxMTVmIiwidXNlcl9pZGVudCI6Ijc1NWQ0ZmU3ZTg5ODRmYjk5N2VmM2RlNjJlYmY5MzEzIiwiZ2VuX2R0IjoiMjAyNC8wNy8yNSwgMTc6MTA6MjUiLCJleHBfZHQiOiIyMDI0LzA3LzI2LCAxNzoxMDoyNSJ9.OPpWPvbCSGNpBJh3QOcvL7FTKpK0GvWWBkoEZm_o_tI"
             }
         )
 
@@ -62,7 +62,7 @@ class TestAuthEndpoints:
 
     def test_failed_authorizate_by_invalid_login(self):
         res = client.post(
-            "api/auth/v1/authorizate",
+            "auth/v1/authorizate",
             json={
                 "login": "SomeInvalidLogin",
                 "password": "QWE123df"
@@ -75,9 +75,9 @@ class TestAuthEndpoints:
 
     def test_failed_authorizate_by_invalid_password(self):
         res = client.post(
-            "api/auth/v1/authorizate",
+            "auth/v1/authorizate",
             json={
-                "login": "TestUser",
+                "login": "TestUser1",
                 "password": "QWE123df1111"
             }
         )
@@ -88,9 +88,9 @@ class TestAuthEndpoints:
 
     def test_authorizate(self):
         res = client.post(
-            "api/auth/v1/authorizate",
+            "auth/v1/authorizate",
             json={
-                "login": "TestUser",
+                "login": "TestUser1",
                 "password": "QWE123df"
             }
         )
@@ -109,19 +109,19 @@ class TestAuthEndpoints:
         access_token = copy(client.cookies["access_token"])
 
         res = client.post(
-            "api/auth/v1/authenticate",
+            "auth/v1/authenticate",
         )
 
         assert res.status_code == 200
 
         assert res.cookies.get("access_token") != access_token
-
+    
     
     def test_update_token(self):
         refresh_token = copy(client.cookies["refresh_token"])
 
         res = client.post(
-            "api/auth/v1/update-tokens",
+            "auth/v1/update-tokens",
         )
 
         assert res.status_code == 200
@@ -132,7 +132,7 @@ class TestAuthEndpoints:
     def test_validate_access_token(self):
 
         res = client.post(
-            "api/auth/v1/validate-access",
+            "auth/v1/validate-access",
         )
 
         assert res.status_code == 200

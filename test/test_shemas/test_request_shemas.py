@@ -10,4 +10,6 @@ def test_refresh_token_request_shema(request_refresh_tokens: list[dict]):
 
         request_shema = RefreshTokenRequestShema.model_validate(el)
 
+        print(request_shema.dump_expression().__str__())
+
         assert expression == request_shema.dump_expression().__str__()

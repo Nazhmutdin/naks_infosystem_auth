@@ -44,7 +44,7 @@ async def update_tokens(tokens: tuple[RefreshToken, AccessToken] = Depends(updat
     return response
 
 
-@v1_router.get("/validate-access")
+@v1_router.post("/validate-access")
 async def validate_access(request: Request) -> Response:
     access_token = request.cookies.get("access_token")
     service = AuthService()

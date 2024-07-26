@@ -31,20 +31,21 @@ class BaseTestModel[Shema: BaseShema]:
         async with self.uow as uow:
 
             insert_data = [
-                el.model_dump() for el in data
+                el.__dict__ for el in data
             ]
             
             await self.__model__.create(
                 insert_data,
-                conn=uow.conn
+                conn=uow.session
             )
 
             for el in data:
                 el = self.__shema__.model_validate(el, from_attributes=True)
-                result = self.__shema__.model_validate((await self.__model__.get(uow.conn, el.ident)), from_attributes=True)
+                res = await self.__model__.get(uow.session, el.ident)
+                result = self.__shema__.model_validate(res, from_attributes=True)
                 assert result == el
 
-            assert await self.__model__.count(uow.conn) == len(data)
+            assert await self.__model__.count(uow.session) == len(data)
 
             await uow.commit()
 
@@ -56,7 +57,7 @@ class BaseTestModel[Shema: BaseShema]:
             with pytest.raises(IntegrityError):
                 await self.__model__.create(
                     data.model_dump(),
-                    conn=uow.conn
+                    conn=uow.session
                 )
 
             await uow.commit()
@@ -65,7 +66,7 @@ class BaseTestModel[Shema: BaseShema]:
     async def test_get(self, attr: str, el: Shema) -> None:
 
         async with self.uow as uow:
-            res = await self.__model__.get(uow.conn, getattr(el, attr))
+            res = await self.__model__.get(uow.session, getattr(el, attr))
 
             assert self.__shema__.model_validate(res, from_attributes=True) == el
 
@@ -75,7 +76,7 @@ class BaseTestModel[Shema: BaseShema]:
         async with self.uow as uow:
 
             res = await self.__model__.get_many(
-                uow.conn,
+                uow.session,
                 request_shema.dump_expression(),
                 limit=request_shema.limit,
                 offset=request_shema.offset
@@ -87,9 +88,9 @@ class BaseTestModel[Shema: BaseShema]:
     async def test_update(self, ident: str, data: dict[str, t.Any]) -> None:
         async with self.uow as uow:
 
-            await self.__model__.update(uow.conn, ident, data)
+            await self.__model__.update(uow.session, ident, data)
 
-            res = await self.__model__.get(uow.conn, ident)
+            res = await self.__model__.get(uow.session, ident)
 
             el = self.__shema__.model_validate(res, from_attributes=True)
 
@@ -106,11 +107,11 @@ class BaseTestModel[Shema: BaseShema]:
     async def test_delete(self, item: Shema) -> None:
         async with self.uow as uow:
 
-            await self.__model__.delete(uow.conn, item.ident)
+            await self.__model__.delete(uow.session, item.ident)
 
-            assert not await self.__model__.get(uow.conn, item.ident)
+            assert not await self.__model__.get(uow.session, item.ident)
 
-            await self.__model__.create(item.model_dump(), conn=uow.conn)
+            await self.__model__.create(item.model_dump(), conn=uow.session)
 
             await uow.commit()
 
@@ -225,13 +226,13 @@ class TestRefreshTokenModel(BaseTestModel[RefreshTokenShema]):
                     {
                         "revoked": True
                     },
-                    16
+                    8
                 ),
                 (
                     {
                         "user_idents": [
-                            "80943143bd4e4d42b86f98790eee534c",
-                            "c539524c795042b6b74c6a923ae3d978"
+                            "755d4fe7e8984fb997ef3de62ebf9313",
+                            "275a20258e144cc9b1d1eda19ab7733b"
                         ],
                         "gen_dt_before": datetime(2024, 1, 1, 1, 1, 1)
                     },
@@ -250,9 +251,9 @@ class TestRefreshTokenModel(BaseTestModel[RefreshTokenShema]):
     @pytest.mark.parametrize(
         "ident, data",
         [
-            ("f7e416d52ad542f38fb0e3947f673119", {"revoked": True}),
-            ("9bc43a9ac32d441bbb06b85768be362b", {"user_ident": UUID("755d4fe7-e898-4fb9-97ef-3de62ebf9313")}),
-            ("c4b256677aac45a994ef5ee414f44772", {"exp_dt": datetime(2024, 6, 1, 8, 38, 12, 906854)}),
+            ("c37a83907992489eb37f2bee06d0115f", {"revoked": True}),
+            ("4261f575ffdb4413a8215c92bc304092", {"user_ident": UUID("e4467703c51445c880a64a5b6fc56181")}),
+            ("8765b8cce09b496087e25086ea1cb0dc", {"exp_dt": datetime(2024, 6, 1, 8, 38, 12, 906854)}),
         ]
     )
     async def test_update(self, ident: str, data: dict) -> None:

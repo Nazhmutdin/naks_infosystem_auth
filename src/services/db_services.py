@@ -4,6 +4,7 @@ from naks_library import BaseRequestShema, to_uuid
 from naks_library import BaseDBService
 from sqlalchemy import update, and_
 
+from src.utils.DTOs import *
 from src.models import *
 from src.shemas import *
 
@@ -14,13 +15,13 @@ __all__: list[str] = [
 ]
 
 
-class UserDBService(BaseDBService[UserShema, UserModel, BaseRequestShema]):
-    __shema__ = UserShema
+class UserDBService(BaseDBService[UserData, UserModel, BaseRequestShema, CreateUserShema, UpdateUserShema]):
+    __dto__ = UserData
     __model__ = UserModel
 
 
-class RefreshTokenDBService(BaseDBService[RefreshTokenShema, RefreshTokenModel, RefreshTokenRequestShema]):
-    __shema__ = RefreshTokenShema
+class RefreshTokenDBService(BaseDBService[RefreshTokenData, RefreshTokenModel, RefreshTokenRequestShema, CreateRefreshTokenShema, UpdateRefreshTokenShema]):
+    __dto__ = RefreshTokenData
     __model__ = RefreshTokenModel
 
     async def revoke_all_user_tokens(self, user_ident: str | UUID) -> None:
