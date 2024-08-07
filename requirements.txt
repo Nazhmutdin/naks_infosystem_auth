@@ -9,7 +9,7 @@ dateutils==0.6.12
 dnspython==2.6.1
 ecdsa==0.19.0
 email_validator==2.2.0
-fastapi==0.111.0
+fastapi==0.112.0
 fastapi-cli==0.0.4
 greenlet==3.0.3
 h11==0.14.0

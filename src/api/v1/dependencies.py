@@ -1,9 +1,11 @@
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, Request, Depends
 
-from src.shemas import *
+from src.shemas import CreateRefreshTokenShema
+from src.utils.DTOs import RefreshTokenData, UserData
 from src.database import get_session
 from src.services.auth_service import AuthService
 from src.services.db_services import UserDBService, RefreshTokenDBService
@@ -19,10 +21,18 @@ type AccessToken = str
 type RefreshToken = str
 
 
-async def get_user(auth_data: AuthData, session = Depends(get_session)) -> UserShema:
+async def get_user_db_service(session: AsyncSession = Depends(get_session)) -> UserDBService:
+    return UserDBService(session)
+
+
+async def get_refresh_token_db_service(session: AsyncSession = Depends(get_session)) -> RefreshTokenDBService:
+    return RefreshTokenDBService(session)
+
+
+async def get_user(auth_data: AuthData, user_db_service: UserDBService = Depends(get_user_db_service)) -> UserData:
     
     service = AuthService()
-    user = await UserDBService(session).get(auth_data.login)
+    user = await user_db_service.get(auth_data.login)
 
     if not user:
         raise HTTPException(
@@ -39,9 +49,7 @@ async def get_user(auth_data: AuthData, session = Depends(get_session)) -> UserS
     return user
 
 
-async def validate_refresh_token(request: Request, session = Depends(get_session)) -> RefreshTokenShema:
-    
-    service = RefreshTokenDBService(session)
+async def validate_refresh_token(request: Request, refresh_token_db_service: RefreshTokenDBService = Depends(get_refresh_token_db_service)) -> RefreshTokenData:
 
     refresh_token = request.cookies.get("refresh_token")
 
@@ -51,7 +59,7 @@ async def validate_refresh_token(request: Request, session = Depends(get_session
             "refresh token required"
         )
     
-    refresh_token = await service.get(refresh_token)
+    refresh_token = await refresh_token_db_service.get(refresh_token)
 
     if not refresh_token:
         raise HTTPException(
@@ -60,7 +68,7 @@ async def validate_refresh_token(request: Request, session = Depends(get_session
         )
     
     if refresh_token.revoked:
-        await service.revoke_all_user_tokens(refresh_token.user_ident)
+        await refresh_token_db_service.revoke_all_user_tokens(refresh_token.user_ident)
 
         raise HTTPException(
             400,
@@ -68,6 +76,20 @@ async def validate_refresh_token(request: Request, session = Depends(get_session
         )
     
     return refresh_token
+
+
+async def validate_superuser_access(
+    refresh_token: RefreshTokenData = Depends(validate_refresh_token),
+    user_db_service: UserDBService = Depends(get_user_db_service)
+) -> None:
+
+    user = await user_db_service.get(refresh_token.user_ident)
+
+    if not user.is_superuser:
+        raise HTTPException(
+            403,
+            f"user ({user.login}) is not superuser"
+        )
 
 
 async def create_access_token(user_ident: str | UUID) -> AccessToken:
@@ -110,23 +132,25 @@ async def create_refresh_token(user_ident: str | UUID) -> CreateRefreshTokenShem
     return token
 
 
-async def authorize_dependency(user: UserShema = Depends(get_user), session = Depends(get_session)) -> tuple[RefreshToken, AccessToken]:
-    service = RefreshTokenDBService(session)
+async def authorize_dependency(
+    user: UserData = Depends(get_user), 
+    refresh_token_db_service: RefreshTokenDBService = Depends(get_refresh_token_db_service)
+) -> tuple[RefreshToken, AccessToken]:
 
-    await service.revoke_all_user_tokens(user.ident)
+    await refresh_token_db_service.revoke_all_user_tokens(user.ident)
 
     refresh_token = await create_refresh_token(user.ident)
     access_token = await create_access_token(user.ident)
 
-    await service.add(refresh_token)
+    await refresh_token_db_service.add(refresh_token)
 
     return (refresh_token.token, access_token)
 
 
 async def authenticatе_dependency(
-    refresh_token: RefreshTokenShema = Depends(validate_refresh_token), 
-    session = Depends(get_session)
-    ) -> AccessToken:
+    refresh_token: RefreshTokenData = Depends(validate_refresh_token), 
+    user_db_service: UserDBService = Depends(get_user_db_service)
+) -> AccessToken:
 
     if refresh_token.expired:
         raise HTTPException(
@@ -134,10 +158,9 @@ async def authenticatе_dependency(
             "refresh token expired"
         )
 
-    service = UserDBService(session)
     auth_service = AuthService()
 
-    user = await service.get(
+    user = await user_db_service.get(
         auth_service.read_token(refresh_token.token)["user_ident"]
     )
 
@@ -153,19 +176,42 @@ async def authenticatе_dependency(
 
 
 async def update_tokens_dependency(
-    refresh_token: RefreshTokenShema = Depends(validate_refresh_token),
-    session = Depends(get_session)
-    ) -> tuple[RefreshToken, AccessToken]:
+    refresh_token: RefreshTokenData = Depends(validate_refresh_token),
+    refresh_token_db_service: RefreshTokenDBService = Depends(get_refresh_token_db_service)
+) -> tuple[RefreshToken, AccessToken]:
     
-    service = RefreshTokenDBService(session)
-    
-    await service.revoke_all_user_tokens(
+    await refresh_token_db_service.revoke_all_user_tokens(
         refresh_token.user_ident
     )
 
     refresh_token = await create_refresh_token(refresh_token.user_ident)
     access_token = await create_access_token(refresh_token.user_ident)
 
-    await service.add(refresh_token)
+    await refresh_token_db_service.add(refresh_token)
 
     return (refresh_token.token, access_token)
+
+
+async def logout_dependency(
+    refresh_token: RefreshTokenData = Depends(validate_refresh_token),
+    refresh_token_db_service: RefreshTokenDBService = Depends(get_refresh_token_db_service)
+) -> None:
+
+    await refresh_token_db_service.revoke_all_user_tokens(
+        refresh_token.user_ident
+    )
+
+
+async def current_user_dependency(
+    refresh_token: RefreshTokenData = Depends(validate_refresh_token),
+    user_db_service: UserDBService = Depends(get_user_db_service)
+) -> UserData:
+    user = await user_db_service.get(refresh_token.user_ident)
+
+    if user is None:
+        raise HTTPException(
+            404,
+            "user not found"
+        )
+    
+    return user

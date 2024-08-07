@@ -1,5 +1,6 @@
 from uuid import UUID
 from datetime import datetime, UTC
+from typing import Self
 
 from pydantic.dataclasses import dataclass
 
@@ -11,7 +12,7 @@ __all__ = [
 ]
 
 
-@dataclass
+@dataclass(eq=False)
 class UserData:
     ident: UUID
     name: str
@@ -24,7 +25,17 @@ class UserData:
     is_superuser: bool
 
 
-@dataclass
+    def __eq__(self, other: Self) -> bool:
+        self_dict = self.__dict__
+
+        for key, value in other.__dict__.items():
+            if self_dict[key] != value:
+                return False
+            
+        return True
+
+
+@dataclass(eq=False)
 class RefreshTokenData:
     ident: UUID
     user_ident: UUID 
@@ -36,3 +47,13 @@ class RefreshTokenData:
     @property
     def expired(self) -> bool:
         return current_utc_datetime_without_timezone() > self.exp_dt
+
+
+    def __eq__(self, other: Self) -> bool:
+        self_dict = self.__dict__
+
+        for key, value in other.__dict__.items():
+            if self_dict[key] != value:
+                return False
+            
+        return True

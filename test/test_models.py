@@ -1,120 +1,12 @@
-from datetime import date, datetime
-from uuid import UUID
-import typing as t
-
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.exc import IntegrityError
-from naks_library import BaseShema, BaseRequestShema, to_date
+from naks_library.testing.base_test_model import BaseTestModel
 import pytest
 
+from src.utils.DTOs import UserData, RefreshTokenData
 from src.utils.uows import UOW
 from src.database import engine
-from src.shemas import *
+from funcs import test_data
 from src.models import *
-
-
-"""
-===================================================================================================================
-repository base test
-===================================================================================================================
-"""
-
-
-@pytest.mark.usefixtures("prepare_db")
-class BaseTestModel[Shema: BaseShema]:
-    __shema__: type[BaseShema]
-    __model__: type[Base]
-
-    uow = UOW(AsyncSession(engine))
-
-    async def test_create(self, data: list[Shema]) -> None:
-        async with self.uow as uow:
-
-            insert_data = [
-                el.__dict__ for el in data
-            ]
-            
-            await self.__model__.create(
-                insert_data,
-                conn=uow.session
-            )
-
-            for el in data:
-                el = self.__shema__.model_validate(el, from_attributes=True)
-                res = await self.__model__.get(uow.session, el.ident)
-                result = self.__shema__.model_validate(res, from_attributes=True)
-                assert result == el
-
-            assert await self.__model__.count(uow.session) == len(data)
-
-            await uow.commit()
-
-
-    async def test_create_existing(self, data: Shema) -> None:
-
-        async with self.uow as uow:
-
-            with pytest.raises(IntegrityError):
-                await self.__model__.create(
-                    data.model_dump(),
-                    conn=uow.session
-                )
-
-            await uow.commit()
-
-
-    async def test_get(self, attr: str, el: Shema) -> None:
-
-        async with self.uow as uow:
-            res = await self.__model__.get(uow.session, getattr(el, attr))
-
-            assert self.__shema__.model_validate(res, from_attributes=True) == el
-
-    
-    async def test_get_many(self, k: int, request_shema: BaseRequestShema) -> None:
-
-        async with self.uow as uow:
-
-            res = await self.__model__.get_many(
-                uow.session,
-                request_shema.dump_expression(),
-                limit=request_shema.limit,
-                offset=request_shema.offset
-            )
-
-            assert len(res[0]) == k
-
-
-    async def test_update(self, ident: str, data: dict[str, t.Any]) -> None:
-        async with self.uow as uow:
-
-            await self.__model__.update(uow.session, ident, data)
-
-            res = await self.__model__.get(uow.session, ident)
-
-            el = self.__shema__.model_validate(res, from_attributes=True)
-
-            for key, value in data.items():
-                if isinstance(getattr(el, key), date):
-                    assert getattr(el, key) == to_date(value, False)
-                    continue
-
-                assert getattr(el, key) == value
-
-            await uow.commit()
-
-
-    async def test_delete(self, item: Shema) -> None:
-        async with self.uow as uow:
-
-            await self.__model__.delete(uow.session, item.ident)
-
-            assert not await self.__model__.get(uow.session, item.ident)
-
-            await self.__model__.create(item.model_dump(), conn=uow.session)
-
-            await uow.commit()
-
 
 """
 ===================================================================================================================
@@ -124,13 +16,16 @@ User repository test
 
 
 @pytest.mark.asyncio
-class TestUserModel(BaseTestModel[UserShema]):
-    __shema__ = UserShema
+class TestUserModel(BaseTestModel[UserData]):
     __model__ = UserModel
+    __dto__ = UserData
+
+    
+    uow = UOW(AsyncSession(engine))
 
 
     @pytest.mark.usefixtures('users')
-    async def test_create(self, users: list[UserShema]) -> None:
+    async def test_create(self, users: list[UserData]) -> None:
         await super().test_create(users)
 
 
@@ -139,7 +34,7 @@ class TestUserModel(BaseTestModel[UserShema]):
         "index",
         [1, 2, 7]
     )
-    async def test_create_existing(self, users: list[UserShema], index: int) -> None:
+    async def test_create_existing(self, users: list[UserData], index: int) -> None:
         await super().test_create_existing(users[index])
 
 
@@ -153,20 +48,15 @@ class TestUserModel(BaseTestModel[UserShema]):
             (5, "ident")
         ]
     )
-    async def test_get(self, users: list[UserShema], index: int, attr: str) -> None:
-        await super().test_get(attr, users[index])
+    async def test_get(self, users: list[UserData], index: int, attr: str) -> None:
+        ident = getattr(users[index], attr)
 
-        
-    async def test_get_many(self) -> None: ...
+        await super().test_get(ident, users[index])
 
 
     @pytest.mark.parametrize(
         "ident, data",
-        [
-            ("TestUser1", {"name": "UpdatedName", "email": "hello@mail.ru"}),
-            ("755d4fe7-e898-4fb9-97ef-3de62ebf9313", {"sign_dt": datetime(2024, 1, 11, 8, 38, 12, 906854), "is_superuser": False}),
-            ("TestUser6", {"login_dt": datetime(2024, 1, 1, 8, 38, 12, 906854)}),
-        ]
+        [(user.ident, new_user_data) for user, new_user_data in zip(test_data.fake_users[:5], test_data.fake_user_generator.generate(5))]
     )
     async def test_update(self, ident: str, data: dict) -> None:
         await super().test_update(ident, data)
@@ -177,8 +67,10 @@ class TestUserModel(BaseTestModel[UserShema]):
             "index",
             [0, 5, 9]
     )
-    async def test_delete(self, users: list[UserShema], index: int) -> None:
-        await super().test_delete(users[index])
+    async def test_delete(self, users: list[UserData], index: int) -> None:
+        ident = getattr(users[index], "ident")
+
+        await super().test_delete(ident, users[index])
 
 
 """
@@ -189,14 +81,15 @@ refresh token repository test
 
 
 @pytest.mark.asyncio
-class TestRefreshTokenModel(BaseTestModel[RefreshTokenShema]): 
-    __shema__ = RefreshTokenShema
+class TestRefreshTokenModel(BaseTestModel[RefreshTokenData]): 
     __model__ = RefreshTokenModel
+    __dto__ = RefreshTokenData
+
+    uow = UOW(AsyncSession(engine))
 
 
     @pytest.mark.usefixtures("refresh_tokens")
-    async def test_create(self, refresh_tokens: list[RefreshTokenShema]) -> None:
-        refresh_tokens = [CreateRefreshTokenShema.model_validate(el, from_attributes=True) for el in refresh_tokens]
+    async def test_create(self, refresh_tokens: list[RefreshTokenData]) -> None:
         await super().test_create(refresh_tokens)
 
 
@@ -205,8 +98,7 @@ class TestRefreshTokenModel(BaseTestModel[RefreshTokenShema]):
             "index",
             [1, 2, 4]
     )
-    async def test_create_existing(self, refresh_tokens: list[RefreshTokenShema], index: int) -> None: 
-        refresh_tokens = [CreateRefreshTokenShema.model_validate(el, from_attributes=True) for el in refresh_tokens]
+    async def test_create_existing(self, refresh_tokens: list[RefreshTokenData], index: int) -> None: 
         await super().test_create_existing(refresh_tokens[index])
 
 
@@ -215,46 +107,15 @@ class TestRefreshTokenModel(BaseTestModel[RefreshTokenShema]):
             "index",
             [1, 2, 4]
     )
-    async def test_get(self, refresh_tokens: list[RefreshTokenShema], index: int) -> None:
-        await super().test_get("ident", refresh_tokens[index])
+    async def test_get(self, refresh_tokens: list[RefreshTokenData], index: int) -> None:
+        ident = getattr(refresh_tokens[index], "ident")
 
-    
-    @pytest.mark.parametrize(
-            "filters, k",
-            [
-                (
-                    {
-                        "revoked": True
-                    },
-                    8
-                ),
-                (
-                    {
-                        "user_idents": [
-                            "755d4fe7e8984fb997ef3de62ebf9313",
-                            "275a20258e144cc9b1d1eda19ab7733b"
-                        ],
-                        "gen_dt_before": datetime(2024, 1, 1, 1, 1, 1)
-                    },
-                    6
-                )
-            ]
-    )
-    async def test_get_many(self, filters: dict, k: int) -> None:
-        request_shema = RefreshTokenRequestShema.model_validate(
-            filters
-        )
-
-        await super().test_get_many(k, request_shema)
+        await super().test_get(ident, refresh_tokens[index])
 
 
     @pytest.mark.parametrize(
         "ident, data",
-        [
-            ("c37a83907992489eb37f2bee06d0115f", {"revoked": True}),
-            ("4261f575ffdb4413a8215c92bc304092", {"user_ident": UUID("e4467703c51445c880a64a5b6fc56181")}),
-            ("8765b8cce09b496087e25086ea1cb0dc", {"exp_dt": datetime(2024, 6, 1, 8, 38, 12, 906854)}),
-        ]
+        [(refresh_token.ident, new_refresh_token_data) for refresh_token, new_refresh_token_data in zip(test_data.fake_refresh_tokens[:5], test_data.fake_refresh_token_generator.generate(5))]
     )
     async def test_update(self, ident: str, data: dict) -> None:
         await super().test_update(ident, data)
@@ -265,6 +126,7 @@ class TestRefreshTokenModel(BaseTestModel[RefreshTokenShema]):
             "index",
             [1, 2, 4]
     )
-    async def test_delete(self, refresh_tokens: list[RefreshTokenShema], index: int) -> None:
-        refresh_tokens = [CreateRefreshTokenShema.model_validate(el, from_attributes=True) for el in refresh_tokens]
-        await super().test_delete(refresh_tokens[index])
+    async def test_delete(self, refresh_tokens: list[RefreshTokenData], index: int) -> None:
+        ident = getattr(refresh_tokens[index], "ident")
+
+        await super().test_delete(ident, refresh_tokens[index])

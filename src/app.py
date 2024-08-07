@@ -8,8 +8,12 @@ app = FastAPI()
 
 
 origins = [
-    "https://api.rhi-qa-infosystem.ru",
-    "http://api.rhi-qa-infosystem.ru"
+    "http://localhost:5173",
+    "https://localhost:5173",
+    "http://rhi-qa-infosystem.ru",
+    "https://rhi-qa-infosystem.ru",
+    "http://api.rhi-qa-infosystem.ru",
+    "https://api.rhi-qa-infosystem.ru"
 ]
 
 app.add_middleware(
@@ -20,7 +24,5 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-app = FastAPI()
 
 app.include_router(v1_router, prefix="/auth/v1")
