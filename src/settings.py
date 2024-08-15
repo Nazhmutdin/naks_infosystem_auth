@@ -32,7 +32,7 @@ class Settings:
 
     @classmethod
     def HOST(cls) -> str:
-        return os.getenv("AUTH_HOST")
+        return os.getenv("HOST")
     
 
     @classmethod
