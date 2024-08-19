@@ -36,13 +36,13 @@ async def get_user(auth_data: AuthData, user_db_service: UserDBService = Depends
 
     if not user:
         raise HTTPException(
-            400,
+            403,
             f"user ({auth_data.login}) not found",
         )
     
     if not service.validate_password(auth_data.password, user.hashed_password):
         raise HTTPException(
-            400,
+            403,
             f"Invalid password",
         )
 
@@ -55,7 +55,7 @@ async def validate_refresh_token(request: Request, refresh_token_db_service: Ref
 
     if not refresh_token:
         raise HTTPException(
-            400,
+            401,
             "refresh token required"
         )
     
@@ -63,7 +63,7 @@ async def validate_refresh_token(request: Request, refresh_token_db_service: Ref
 
     if not refresh_token:
         raise HTTPException(
-            400,
+            403,
             "refresh token not found"
         )
     
@@ -71,7 +71,7 @@ async def validate_refresh_token(request: Request, refresh_token_db_service: Ref
         await refresh_token_db_service.revoke_all_user_tokens(refresh_token.user_ident)
 
         raise HTTPException(
-            400,
+            403,
             "revoked token"
         )
     
@@ -154,7 +154,7 @@ async def authenticatе_dependency(
 
     if refresh_token.expired:
         raise HTTPException(
-            400,
+            403,
             "refresh token expired"
         )
 
@@ -166,8 +166,8 @@ async def authenticatе_dependency(
 
     if not user:
         raise HTTPException(
-            400, 
-            "user not found"
+            403, 
+            f"user ({refresh_token.user_ident}) not found",
         )
 
     access_token = await create_access_token(user.ident)
@@ -210,8 +210,8 @@ async def current_user_dependency(
 
     if user is None:
         raise HTTPException(
-            404,
-            "user not found"
+            403,
+            f"user ({refresh_token.user_ident}) not found",
         )
     
     return user

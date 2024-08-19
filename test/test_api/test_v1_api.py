@@ -47,7 +47,7 @@ class TestAuthEndpoints:
             }
         )
 
-        assert res.status_code == 400
+        assert res.status_code == 403
         assert res.text == '{"detail":"refresh token expired"}'
 
 
@@ -64,7 +64,7 @@ class TestAuthEndpoints:
             }
         )
 
-        assert res.status_code == 400
+        assert res.status_code == 403
         assert res.text == '{"detail":"revoked token"}'
 
 
@@ -75,7 +75,7 @@ class TestAuthEndpoints:
             cookies={}
         )
 
-        assert res.status_code == 400
+        assert res.status_code == 401
         assert res.text == '{"detail":"refresh token required"}'
 
 
@@ -92,7 +92,7 @@ class TestAuthEndpoints:
             }
         )
 
-        assert res.status_code == 400
+        assert res.status_code == 403
         assert res.text == '{"detail":"revoked token"}'
         
 
@@ -105,7 +105,7 @@ class TestAuthEndpoints:
             }
         )
 
-        assert res.status_code == 400
+        assert res.status_code == 403
         assert res.text == '{"detail":"user (SomeInvalidLogin) not found"}'
 
     @pytest.mark.parametrize(
@@ -121,7 +121,7 @@ class TestAuthEndpoints:
             }
         )
 
-        assert res.status_code == 400
+        assert res.status_code == 403
         assert res.text == '{"detail":"Invalid password"}'
 
 
