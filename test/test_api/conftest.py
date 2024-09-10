@@ -13,9 +13,9 @@ from funcs import test_data
 def add_users():
 
     async def add_users_async():
-        service = UserDBService(AsyncSession(engine))
+        service = UserDBService()
         
-        await service.add(*[CreateUserShema.model_validate(user) for user in test_data.fake_users_dicts])
+        await service.insert(AsyncSession(engine), *[CreateUserShema.model_validate(user) for user in test_data.fake_users_dicts])
     
     run(add_users_async())
 
@@ -24,8 +24,8 @@ def add_users():
 def add_refresh_tokens():
 
     async def add_refresh_tokens_async():
-        service = RefreshTokenDBService(AsyncSession(engine))
+        service = RefreshTokenDBService()
         
-        await service.add(*[CreateRefreshTokenShema.model_validate(token) for token in test_data.fake_refresh_tokens_dicts])
+        await service.insert(AsyncSession(engine), *[CreateRefreshTokenShema.model_validate(token) for token in test_data.fake_refresh_tokens_dicts])
     
     run(add_refresh_tokens_async())

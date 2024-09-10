@@ -11,6 +11,16 @@ if not os.getenv("MODE"):
 class Settings:
 
     @classmethod
+    def ACCESS_TOKEN_LIFETIME_MINUTES(cls) -> int:
+        return 60
+
+
+    @classmethod
+    def REFRESH_TOKEN_LIFETIME_HOURS(cls) -> int:
+        return 24
+
+
+    @classmethod
     def DB_NAME(cls) -> str:
         return os.getenv("AUTH_DATABASE_NAME")
     

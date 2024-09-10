@@ -155,6 +155,14 @@ class TestData:
         return result
 
 
+    def get_actual_refresh_token(self) -> RefreshTokenData:
+        result = []
+
+        for refresh_token in test_data.fake_refresh_tokens:
+            if not refresh_token.expired and not refresh_token.revoked and not self.get_fake_user(refresh_token).is_superuser:
+                return refresh_token
+
+
     def get_actual_refresh_tokens(self) -> list[RefreshTokenData]:
         result = []
 

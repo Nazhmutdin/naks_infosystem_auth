@@ -1,11 +1,12 @@
 from uuid import UUID, uuid4
+import typing as t
 
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, Request, Depends
 
 from src.shemas import CreateRefreshTokenShema
-from src.utils.DTOs import RefreshTokenData, UserData
+from src.utils.DTOs import RefreshTokenData, UserData, AccessTokenData
 from src.database import get_session
 from src.services.auth_service import AuthService
 from src.services.db_services import UserDBService, RefreshTokenDBService
@@ -21,18 +22,13 @@ type AccessToken = str
 type RefreshToken = str
 
 
-async def get_user_db_service(session: AsyncSession = Depends(get_session)) -> UserDBService:
-    return UserDBService(session)
+SessionDep = t.Annotated[AsyncSession, Depends(get_session)]
 
 
-async def get_refresh_token_db_service(session: AsyncSession = Depends(get_session)) -> RefreshTokenDBService:
-    return RefreshTokenDBService(session)
-
-
-async def get_user(auth_data: AuthData, user_db_service: UserDBService = Depends(get_user_db_service)) -> UserData:
+async def get_user(auth_data: AuthData, session: SessionDep, user_db_service: UserDBService = Depends(UserDBService)) -> UserData:
     
     service = AuthService()
-    user = await user_db_service.get(auth_data.login)
+    user = await user_db_service.get_by_login(session, auth_data.login)
 
     if not user:
         raise HTTPException(
@@ -49,7 +45,11 @@ async def get_user(auth_data: AuthData, user_db_service: UserDBService = Depends
     return user
 
 
-async def validate_refresh_token(request: Request, refresh_token_db_service: RefreshTokenDBService = Depends(get_refresh_token_db_service)) -> RefreshTokenData:
+async def validate_refresh_token(
+    request: Request, 
+    session: SessionDep, 
+    refresh_token_db_service: RefreshTokenDBService = Depends(RefreshTokenDBService)
+) -> RefreshTokenData:
 
     refresh_token = request.cookies.get("refresh_token")
 
@@ -59,7 +59,7 @@ async def validate_refresh_token(request: Request, refresh_token_db_service: Ref
             "refresh token required"
         )
     
-    refresh_token = await refresh_token_db_service.get(refresh_token)
+    refresh_token = await refresh_token_db_service.get_by_token(session, refresh_token)
 
     if not refresh_token:
         raise HTTPException(
@@ -68,7 +68,7 @@ async def validate_refresh_token(request: Request, refresh_token_db_service: Ref
         )
     
     if refresh_token.revoked:
-        await refresh_token_db_service.revoke_all_user_tokens(refresh_token.user_ident)
+        await refresh_token_db_service.revoke_all_user_tokens(session, refresh_token.user_ident)
 
         raise HTTPException(
             403,
@@ -78,12 +78,28 @@ async def validate_refresh_token(request: Request, refresh_token_db_service: Ref
     return refresh_token
 
 
+async def validate_access_token(request: Request) -> AccessTokenData:
+
+    access_token = request.cookies.get("access_token")
+
+    if not access_token:
+        raise HTTPException(
+            401,
+            "access token required"
+        )
+
+    auth_service = AuthService()
+
+    return AccessTokenData(**auth_service.read_token(access_token), token=access_token)
+
+
 async def validate_superuser_access(
-    refresh_token: RefreshTokenData = Depends(validate_refresh_token),
-    user_db_service: UserDBService = Depends(get_user_db_service)
+    session: SessionDep,
+    user_db_service: UserDBService = Depends(UserDBService),
+    access_token: AccessTokenData = Depends(validate_access_token)
 ) -> None:
 
-    user = await user_db_service.get(refresh_token.user_ident)
+    user = await user_db_service.get(session, access_token.user_ident)
 
     if not user.is_superuser:
         raise HTTPException(
@@ -92,7 +108,7 @@ async def validate_superuser_access(
         )
 
 
-async def create_access_token(user_ident: str | UUID) -> AccessToken:
+async def create_access_token(user_ident: str | UUID) -> AccessTokenData:
     
     auth_service = AuthService()
     gen_dt = current_utc_datetime()
@@ -102,7 +118,11 @@ async def create_access_token(user_ident: str | UUID) -> AccessToken:
         gen_dt=gen_dt
     )
 
-    return token
+    return AccessTokenData(
+        gen_dt=gen_dt,
+        user_ident=user_ident,
+        token=token
+    )
 
 
 async def create_refresh_token(user_ident: str | UUID) -> CreateRefreshTokenShema:
@@ -133,23 +153,25 @@ async def create_refresh_token(user_ident: str | UUID) -> CreateRefreshTokenShem
 
 
 async def authorize_dependency(
-    user: UserData = Depends(get_user), 
-    refresh_token_db_service: RefreshTokenDBService = Depends(get_refresh_token_db_service)
+    session: SessionDep, 
+    refresh_token_db_service: RefreshTokenDBService = Depends(RefreshTokenDBService),
+    user: UserData = Depends(get_user)
 ) -> tuple[RefreshToken, AccessToken]:
 
-    await refresh_token_db_service.revoke_all_user_tokens(user.ident)
+    await refresh_token_db_service.revoke_all_user_tokens(session, user.ident)
 
     refresh_token = await create_refresh_token(user.ident)
     access_token = await create_access_token(user.ident)
 
-    await refresh_token_db_service.add(refresh_token)
+    await refresh_token_db_service.insert(session, refresh_token)
 
-    return (refresh_token.token, access_token)
+    return (refresh_token.token, access_token.token)
 
 
 async def authenticatе_dependency(
-    refresh_token: RefreshTokenData = Depends(validate_refresh_token), 
-    user_db_service: UserDBService = Depends(get_user_db_service)
+    session: SessionDep, 
+    user_db_service: UserDBService = Depends(UserDBService),
+    refresh_token: RefreshTokenData = Depends(validate_refresh_token)
 ) -> AccessToken:
 
     if refresh_token.expired:
@@ -161,6 +183,7 @@ async def authenticatе_dependency(
     auth_service = AuthService()
 
     user = await user_db_service.get(
+        session,
         auth_service.read_token(refresh_token.token)["user_ident"]
     )
 
@@ -172,41 +195,46 @@ async def authenticatе_dependency(
 
     access_token = await create_access_token(user.ident)
 
-    return access_token
+    return access_token.token
 
 
 async def update_tokens_dependency(
-    refresh_token: RefreshTokenData = Depends(validate_refresh_token),
-    refresh_token_db_service: RefreshTokenDBService = Depends(get_refresh_token_db_service)
+    session: SessionDep,
+    refresh_token_db_service: RefreshTokenDBService = Depends(RefreshTokenDBService),
+    refresh_token: RefreshTokenData = Depends(validate_refresh_token)
 ) -> tuple[RefreshToken, AccessToken]:
     
     await refresh_token_db_service.revoke_all_user_tokens(
+        session,
         refresh_token.user_ident
     )
 
     refresh_token = await create_refresh_token(refresh_token.user_ident)
     access_token = await create_access_token(refresh_token.user_ident)
 
-    await refresh_token_db_service.add(refresh_token)
+    await refresh_token_db_service.insert(session, refresh_token)
 
-    return (refresh_token.token, access_token)
+    return (refresh_token.token, access_token.token)
 
 
 async def logout_dependency(
-    refresh_token: RefreshTokenData = Depends(validate_refresh_token),
-    refresh_token_db_service: RefreshTokenDBService = Depends(get_refresh_token_db_service)
+    session: SessionDep,
+    refresh_token_db_service: RefreshTokenDBService = Depends(RefreshTokenDBService),
+    refresh_token: RefreshTokenData = Depends(validate_refresh_token)
 ) -> None:
 
     await refresh_token_db_service.revoke_all_user_tokens(
+        session,
         refresh_token.user_ident
     )
 
 
 async def current_user_dependency(
-    refresh_token: RefreshTokenData = Depends(validate_refresh_token),
-    user_db_service: UserDBService = Depends(get_user_db_service)
+    session: SessionDep,
+    user_db_service: UserDBService = Depends(UserDBService),
+    refresh_token: RefreshTokenData = Depends(validate_refresh_token)
 ) -> UserData:
-    user = await user_db_service.get(refresh_token.user_ident)
+    user = await user_db_service.get(session, refresh_token.user_ident)
 
     if user is None:
         raise HTTPException(

@@ -186,7 +186,7 @@ class TestAuthEndpoints:
     def test_logout(self):
 
         res = client.post(
-            "auth/v1/logout",
+            "auth/v1/logout"
         )
 
         assert res.status_code == 200
@@ -201,15 +201,23 @@ class TestAuthEndpoints:
     )
     def test_create_user(self, user: dict):
 
-        user = copy(user)
+        superuser_refresh_token = test_data.get_actual_superuser_refresh_token()
+
+        res = client.post(
+            "auth/v1/authenticate",
+            cookies={
+                "refresh_token": superuser_refresh_token.token
+            }
+        )
+
+        client.cookies["access_token"] = res.cookies.get("access_token")
 
         del user["ident"]
         del user["hashed_password"]
 
         res = client.post(
-            "auth/v1/user",
-            json=loads(dumps(user, default=str, sort_keys=True)),
-            cookies={"refresh_token": test_data.get_actual_superuser_refresh_token().token}
+            "v1/users",
+            json=loads(dumps(user, default=str, sort_keys=True))
         )
 
         assert res.status_code == 200
@@ -225,13 +233,12 @@ class TestAuthEndpoints:
         del data["ident"]
 
         res = client.patch(
-            f"auth/v1/user/{ident}",
-            json=loads(dumps(data, default=str, sort_keys=True)),
-            cookies={"refresh_token": test_data.get_actual_superuser_refresh_token().token}
+            f"v1/users/{ident}",
+            json=loads(dumps(data, default=str, sort_keys=True))
         )
 
         assert res.status_code == 200
-        assert res.text == "user successfully updated"
+        assert res.text == f"user {ident} successfully updated"
 
 
     @pytest.mark.parametrize(
@@ -241,9 +248,8 @@ class TestAuthEndpoints:
     def test_delete_user(self, user: UserData):
 
         res = client.delete(
-            f"auth/v1/user/{user.ident}",
-            cookies={"refresh_token": test_data.get_actual_superuser_refresh_token().token}
+            f"v1/users/{user.ident}"
         )
 
         assert res.status_code == 200
-        assert res.text == "user successfully deleted"
+        assert res.text == f"user {user.ident} successfully deleted"

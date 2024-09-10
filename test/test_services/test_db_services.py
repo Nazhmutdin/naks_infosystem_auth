@@ -14,33 +14,38 @@ from funcs import test_data
 
 @pytest.mark.asyncio
 class TestUserDBService(BaseTestDBService):
-    service = UserDBService(AsyncSession(engine))
+    service: UserDBService = UserDBService()
+    session = AsyncSession(engine)
     __dto__ = UserData
     __create_shema__ = CreateUserShema
     __update_shema__ = UpdateUserShema
 
 
     @pytest.mark.usefixtures("users_dicts")
-    async def test_add(self, users_dicts: list[dict]) -> None:
-        await super().test_add(users_dicts)
+    async def test_insert(self, users_dicts: list[dict]) -> None:
+        await super().test_insert(users_dicts)
 
 
     @pytest.mark.usefixtures('users')
     @pytest.mark.parametrize(
-        "index, attr",
-        [
-            (1, "login"),
-            (3, "ident"),
-            (7, "login"),
-            (5, "ident")
-        ]
+        "index",
+        [0, 5, 7, 9]
     )
-    async def test_get(self, users: list[UserData], index: int, attr: str) -> None:
+    async def test_get(self, users: list[UserData], index: int) -> None:
         user = users[index]
 
-        ident = getattr(user, attr)
+        await super().test_get(user.ident, user)
 
-        await super().test_get(ident, user)
+
+    @pytest.mark.usefixtures('users')
+    @pytest.mark.parametrize(
+        "index",
+        [1, 8, 6, 4]
+    )
+    async def test_get_by_login(self, users: list[UserData], index: int) -> None:
+        user = users[index]
+
+        assert await self.service.get_by_login(self.session, user.login) == user
 
 
     @pytest.mark.parametrize(
@@ -64,15 +69,16 @@ class TestUserDBService(BaseTestDBService):
 
 @pytest.mark.asyncio
 class TestRefreshTokenDBService(BaseTestDBService): 
-    service = RefreshTokenDBService(AsyncSession(engine))
+    service = RefreshTokenDBService()
+    session = AsyncSession(engine)
     __dto__ = RefreshTokenData
     __create_shema__ = CreateRefreshTokenShema
     __update_shema__ = UpdateRefreshTokenShema
 
 
     @pytest.mark.usefixtures("refresh_tokens_dicts")
-    async def test_add(self, refresh_tokens_dicts: list[dict]) -> None:
-        await super().test_add(refresh_tokens_dicts)
+    async def test_insert(self, refresh_tokens_dicts: list[dict]) -> None:
+        await super().test_insert(refresh_tokens_dicts)
 
 
     @pytest.mark.usefixtures('refresh_tokens')

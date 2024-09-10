@@ -1,11 +1,9 @@
 from datetime import datetime
 import uuid
 
-from sqlalchemy.orm import Mapped, attributes, DeclarativeBase
+from sqlalchemy.orm import Mapped, DeclarativeBase
 from sqlalchemy.schema import Index
 import sqlalchemy as sa
-from naks_library.funcs import is_uuid
-from naks_library.base_model import CRUDMixin
 
 
 __all__ = [
@@ -17,7 +15,7 @@ __all__ = [
 ]
 
 
-class Base(DeclarativeBase, CRUDMixin): ...
+class Base(DeclarativeBase): ...
 
 
 class UserGroupModel(Base):
@@ -44,14 +42,6 @@ class UserModel(Base):
     __table_args__ = (
         Index("user_ident_idx", ident),
     )
-    
-
-    @classmethod
-    def _get_column(cls, ident: str | uuid.UUID) -> attributes.InstrumentedAttribute:
-        if is_uuid(ident):
-            return cls.ident
-        
-        return cls.login
 
 
 class RefreshTokenModel(Base):
@@ -69,14 +59,6 @@ class RefreshTokenModel(Base):
         Index("token_idx", token),
         Index("revoked_idx", revoked),
     )
-    
-
-    @classmethod
-    def _get_column(cls, ident: str | uuid.UUID) -> attributes.InstrumentedAttribute:
-        if is_uuid(ident):
-            return RefreshTokenModel.ident
-        
-        return RefreshTokenModel.token
 
 
 class PermissionModel(Base):

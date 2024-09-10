@@ -1,28 +1,26 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, Request, status
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 
-from src.api.v1.routes import v1_router
+from src.api.v1.routes import v1_router, auth_v1_router
 
 
 app = FastAPI()
 
 
-origins = [
-    "http://localhost:5173",
-    "https://localhost:5173",
-    "http://rhi-qa-infosystem.ru",
-    "https://rhi-qa-infosystem.ru",
-    "http://api.rhi-qa-infosystem.ru",
-    "https://api.rhi-qa-infosystem.ru"
-]
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    errors = exc.errors()
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+    for error in errors:
+        del error["input"]
+
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content=jsonable_encoder({"detail": errors}),
+    )
 
 
-app.include_router(v1_router, prefix="/auth/v1")
+app.include_router(v1_router)
+app.include_router(auth_v1_router)

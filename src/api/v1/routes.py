@@ -9,9 +9,9 @@ from src.api.v1.dependencies import (
     logout_dependency,
     current_user_dependency,
     validate_superuser_access,
-    get_user_db_service,
     AccessToken, 
-    RefreshToken
+    RefreshToken,
+    SessionDep
 )
 from src.utils.funcs import refresh_token_expiration_dt, access_token_expiration_dt
 from src.utils.DTOs import UserData
@@ -19,10 +19,12 @@ from src._types import AccessTokenShema
 from src.shemas import CreateUserShema, UpdateUserShema, UserShema, BaseUserShema
  
 
-v1_router = APIRouter()
+auth_v1_router = APIRouter(
+    prefix="/auth/v1"
+)
 
 
-@v1_router.post("/authorizate")
+@auth_v1_router.post("/authorizate")
 async def authorizate(
     tokens: tuple[RefreshToken, AccessToken] = Depends(authorize_dependency)
     ) -> Response: 
@@ -35,7 +37,7 @@ async def authorizate(
     return response
 
 
-@v1_router.post("/authenticate")
+@auth_v1_router.post("/authenticate")
 async def authenticate(access_token: AccessToken = Depends(authenticatе_dependency)) -> Response:
     
     response = Response()
@@ -45,7 +47,7 @@ async def authenticate(access_token: AccessToken = Depends(authenticatе_depende
     return response
 
 
-@v1_router.post("/update-tokens")
+@auth_v1_router.post("/update-tokens")
 async def update_tokens(tokens: tuple[RefreshToken, AccessToken] = Depends(update_tokens_dependency)) -> Response:
     
     response = Response()
@@ -56,7 +58,7 @@ async def update_tokens(tokens: tuple[RefreshToken, AccessToken] = Depends(updat
     return response
 
 
-@v1_router.post("/validate-access")
+@auth_v1_router.post("/validate-access")
 async def validate_access(request: Request) -> Response:
     access_token = request.cookies.get("access_token")
     service = AuthService()
@@ -84,65 +86,74 @@ async def validate_access(request: Request) -> Response:
             )
         
 
-@v1_router.post("/current-user")
+@auth_v1_router.post("/current-user")
 async def me(user: UserData | None = Depends(current_user_dependency)) -> BaseUserShema:
     return user
 
 
-@v1_router.post("/logout", dependencies=[Depends(logout_dependency)])
+@auth_v1_router.post("/logout", dependencies=[Depends(logout_dependency)])
 async def logout() -> Response:
     
     response = Response()
 
-    response.set_cookie("refresh_token", "", max_age=-1)
-    response.set_cookie("access_token", "", max_age=-1)
+    response.delete_cookie("refresh_token", samesite="none", secure=True, httponly=True)
+    response.delete_cookie("access_token", samesite="none", secure=True, httponly=True)
 
     return response
 
 
+v1_router = APIRouter(
+    prefix="/v1"
+)
+
+
 @v1_router.post("/user", dependencies=[Depends(validate_superuser_access)])
 async def create_user(
+    session: SessionDep,
     user_data: CreateUserShema,
-    user_db_service: UserDBService = Depends(get_user_db_service)
+    user_db_service: UserDBService = Depends(UserDBService)
 ) -> Response:
-    await user_db_service.add(user_data)
+    await user_db_service.insert(session, user_data)
 
     return Response(
         "user successfully created"
     )
 
 
-@v1_router.get("/user", dependencies=[Depends(validate_superuser_access)])
+@v1_router.get("/user/{ident}", dependencies=[Depends(validate_superuser_access)])
 async def get_user(
     ident: str,
-    user_db_service: UserDBService = Depends(get_user_db_service)
+    session: SessionDep,
+    user_db_service: UserDBService = Depends(UserDBService)
 ) -> UserShema:
 
-    return await user_db_service.get(ident)
+    return await user_db_service.get(session, ident)
 
 
 @v1_router.patch("/user/{ident}", dependencies=[Depends(validate_superuser_access)])
 async def update_user(
     ident: str,
+    session: SessionDep,
     user_data: UpdateUserShema,
-    user_db_service: UserDBService = Depends(get_user_db_service)
+    user_db_service: UserDBService = Depends(UserDBService)
 ) -> Response:
     
-    await user_db_service.update(ident, user_data)
+    await user_db_service.update(session, ident, user_data)
 
     return Response(
-        "user successfully updated"
+        f"user {ident} successfully updated"
     )
 
 
 @v1_router.delete("/user/{ident}", dependencies=[Depends(validate_superuser_access)])
 async def delete_user(
     ident: str,
-    user_db_service: UserDBService = Depends(get_user_db_service)
+    session: SessionDep,
+    user_db_service: UserDBService = Depends(UserDBService)
 ) -> Response:
     
-    await user_db_service.delete(ident)
+    await user_db_service.delete(session, ident)
 
     return Response(
-        "user successfully deleted"
+        f"user {ident} successfully deleted"
     )
