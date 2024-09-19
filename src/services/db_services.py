@@ -40,13 +40,14 @@ type UserSelectShema = BaseShema
 
 
 class UserDBService(BaseDBService[UserData, UserModel, UserSelectShema, CreateUserShema, UpdateUserShema]):
-    __dto__ = UserData
-    __model__ = UserModel
-    _filters_map = USER_FILTERS_MAP
-    _select_attrs = USER_SELECT_ATTRS
-    _select_from_attrs = USER_SELECT_FROM_ATTRS
-    _and_model_columns = USER_AND_SELECT_COLUMNS
-    _or_model_columns = USER_OR_SELECT_COLUMNS
+    def __init__(self):
+        self.__dto__ = UserData
+        self.__model__ = UserModel
+        self._filters_map = USER_FILTERS_MAP
+        self._select_attrs = USER_SELECT_ATTRS
+        self._select_from_attrs = USER_SELECT_FROM_ATTRS
+        self._and_model_columns = USER_AND_SELECT_COLUMNS
+        self._or_model_columns = USER_OR_SELECT_COLUMNS
 
     async def get_by_login(self, session: AsyncSession, login: str) -> UserData | None:
 
@@ -98,13 +99,14 @@ REFRESH_TOKEN_AND_SELECT_COLUMNS: list[InstrumentedAttribute] = [
 
 
 class RefreshTokenDBService(BaseDBService[RefreshTokenData, RefreshTokenModel, RefreshTokenSelectShema, CreateRefreshTokenShema, UpdateRefreshTokenShema]):
-    __dto__ = RefreshTokenData
-    __model__ = RefreshTokenModel
-    _filters_map = REFRESH_TOKEN_FILTERS_MAP
-    _select_attrs = REFRESH_TOKEN_SELECT_ATTRS
-    _select_from_attrs = REFRESH_TOKEN_SELECT_FROM_ATTRS
-    _and_model_columns = REFRESH_TOKEN_AND_SELECT_COLUMNS
-    _or_model_columns = REFRESH_TOKEN_OR_SELECT_COLUMNS
+    def __init__(self) -> None:
+        self.__dto__ = RefreshTokenData
+        self.__model__ = RefreshTokenModel
+        self._filters_map = REFRESH_TOKEN_FILTERS_MAP
+        self._select_attrs = REFRESH_TOKEN_SELECT_ATTRS
+        self._select_from_attrs = REFRESH_TOKEN_SELECT_FROM_ATTRS
+        self._and_model_columns = REFRESH_TOKEN_AND_SELECT_COLUMNS
+        self._or_model_columns = REFRESH_TOKEN_OR_SELECT_COLUMNS
 
 
     async def get_by_token(self, session: AsyncSession, token: str) -> RefreshTokenData | None:

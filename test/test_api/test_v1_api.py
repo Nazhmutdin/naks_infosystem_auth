@@ -216,7 +216,7 @@ class TestAuthEndpoints:
         del user["hashed_password"]
 
         res = client.post(
-            "v1/users",
+            "v1/user",
             json=loads(dumps(user, default=str, sort_keys=True))
         )
 
@@ -233,7 +233,7 @@ class TestAuthEndpoints:
         del data["ident"]
 
         res = client.patch(
-            f"v1/users/{ident}",
+            f"v1/user/{ident}",
             json=loads(dumps(data, default=str, sort_keys=True))
         )
 
@@ -248,7 +248,7 @@ class TestAuthEndpoints:
     def test_delete_user(self, user: UserData):
 
         res = client.delete(
-            f"v1/users/{user.ident}"
+            f"v1/user/{user.ident}"
         )
 
         assert res.status_code == 200

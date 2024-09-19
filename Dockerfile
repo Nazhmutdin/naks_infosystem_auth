@@ -1,10 +1,17 @@
+FROM python:3.12.2-slim as build
+
+WORKDIR /src
+
+COPY requirements.txt .
+RUN pip3 wheel --no-cache-dir --wheel-dir /src/wheels -r requirements.txt
+
 FROM python:3.12.2-slim
 
 WORKDIR /src
 
-RUN apt-get update && apt-get install -y libpq-dev
+COPY --from=build /src/wheels /wheels
+COPY --from=build /src/requirements.txt .
 
-COPY requirements.txt .
-RUN pip3 install --upgrade -r requirements.txt --no-cache
+RUN pip install --no-cache /wheels/*
 
 COPY . .
