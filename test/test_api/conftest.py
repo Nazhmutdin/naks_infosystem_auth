@@ -3,9 +3,7 @@ from asyncio import run
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from services.db_services import UserDBService, RefreshTokenDBService
-from shemas import CreateUserShema, CreateRefreshTokenShema
-from database import engine
+from main.dependencies import container, dump_create_user_interactor, dump_create_refresh_token_interactor
 from funcs import test_data
 
 
@@ -13,10 +11,12 @@ from funcs import test_data
 def add_users():
 
     async def add_users_async():
-        service = UserDBService()
-        
-        await service.insert(AsyncSession(engine), *[CreateUserShema.model_validate(user) for user in test_data.fake_users_dicts])
-    
+        async with AsyncSession(container.engine) as session:
+            create = await dump_create_user_interactor(session)
+
+            for user in test_data.fake_users:
+                await create(user)
+
     run(add_users_async())
 
 
@@ -24,8 +24,10 @@ def add_users():
 def add_refresh_tokens():
 
     async def add_refresh_tokens_async():
-        service = RefreshTokenDBService()
+        async with AsyncSession(container.engine) as session:
+            create = await dump_create_refresh_token_interactor(session)
+
+            for refresh_token in test_data.fake_refresh_tokens:
+                await create(refresh_token)
         
-        await service.insert(AsyncSession(engine), *[CreateRefreshTokenShema.model_validate(token) for token in test_data.fake_refresh_tokens_dicts])
-    
     run(add_refresh_tokens_async())

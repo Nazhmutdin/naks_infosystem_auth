@@ -1,12 +1,13 @@
-import json
 from uuid import uuid4
 from datetime import datetime, timedelta
 
 from faker import Faker
 
-from shemas import *
-from services.auth_service import AuthService
-from utils.DTOs import UserData, RefreshTokenData
+from infrastructure.services.hasher import PasswordHasher
+from infrastructure.services.jwt_service import JwtService
+from infrastructure.dto import RefreshTokenDTO
+from application.dto import UserDTO
+
 
 
 class IFakeDataGenerator:
@@ -17,7 +18,7 @@ class IFakeDataGenerator:
 
 
 class FakeUserDataGenerator(IFakeDataGenerator):
-    auth_service = AuthService()
+    hasher = PasswordHasher()
 
     def generate(self, k: int = 10) -> list[dict]:
         data = []
@@ -29,7 +30,7 @@ class FakeUserDataGenerator(IFakeDataGenerator):
             sub_data["name"] = self.faker.name()
             sub_data["login"] = self.gen_login(sub_data["name"])
             sub_data["password"] = self.faker.password(8)
-            sub_data["hashed_password"] = self.auth_service.hash_password(sub_data["password"])
+            sub_data["hashed_password"] = self.hasher.hash(sub_data["password"])
             sub_data["email"] = self.faker.email()
             sub_data["sign_dt"] = self.faker.date_time()
             sub_data["update_dt"] = self.faker.date_time()
@@ -45,7 +46,7 @@ class FakeUserDataGenerator(IFakeDataGenerator):
         sub_data["name"] = self.faker.name()
         sub_data["login"] = self.gen_login(sub_data["name"])
         sub_data["password"] = self.faker.password(8)
-        sub_data["hashed_password"] = self.auth_service.hash_password(sub_data["password"])
+        sub_data["hashed_password"] = self.hasher.hash(sub_data["password"])
         sub_data["email"] = self.faker.email()
         sub_data["sign_dt"] = self.faker.date_time()
         sub_data["update_dt"] = self.faker.date_time()
@@ -64,9 +65,9 @@ class FakeUserDataGenerator(IFakeDataGenerator):
 
 
 class FakeRefreshTokenDataGenerator(IFakeDataGenerator):
-    auth_service = AuthService()
+    auth_service = JwtService()
 
-    def __init__(self, users: list[UserData]) -> None:
+    def __init__(self, users: list[UserDTO]) -> None:
         self.users = users
 
     
@@ -112,7 +113,7 @@ class FakeRefreshTokenDataGenerator(IFakeDataGenerator):
         return data
     
 
-    def get_superuser(self) -> UserData:
+    def get_superuser(self) -> UserDTO:
         for user in self.users:
             if user.is_superuser:
                 return user
@@ -126,16 +127,16 @@ class TestData:
         self.fake_refresh_tokens_dicts = self.fake_refresh_token_generator.generate()
 
     @property
-    def fake_users(self) -> list[UserData]:
-        return [UserData(**el) for el in self.fake_users_dicts]
+    def fake_users(self) -> list[UserDTO]:
+        return [UserDTO(**el) for el in self.fake_users_dicts]
 
 
     @property
-    def fake_refresh_tokens(self) -> list[RefreshTokenData]:
-        return [RefreshTokenData(**el) for el in self.fake_refresh_tokens_dicts]
+    def fake_refresh_tokens(self) -> list[RefreshTokenDTO]:
+        return [RefreshTokenDTO(**el) for el in self.fake_refresh_tokens_dicts]
     
     
-    def get_expired_refresh_tokens(self) -> list[RefreshTokenData]:
+    def get_expired_refresh_tokens(self) -> list[RefreshTokenDTO]:
         result = []
 
         for refresh_token in test_data.fake_refresh_tokens:
@@ -145,7 +146,7 @@ class TestData:
         return result
 
 
-    def get_revoked_refresh_tokens(self) -> list[RefreshTokenData]:
+    def get_revoked_refresh_tokens(self) -> list[RefreshTokenDTO]:
         result = []
 
         for refresh_token in test_data.fake_refresh_tokens:
@@ -155,15 +156,14 @@ class TestData:
         return result
 
 
-    def get_actual_refresh_token(self) -> RefreshTokenData:
-        result = []
+    def get_actual_refresh_token(self) -> RefreshTokenDTO:
 
-        for refresh_token in test_data.fake_refresh_tokens:
+        for refresh_token in self.fake_refresh_tokens:
             if not refresh_token.expired and not refresh_token.revoked and not self.get_fake_user(refresh_token).is_superuser:
                 return refresh_token
 
 
-    def get_actual_refresh_tokens(self) -> list[RefreshTokenData]:
+    def get_actual_refresh_tokens(self) -> list[RefreshTokenDTO]:
         result = []
 
         for refresh_token in test_data.fake_refresh_tokens:
@@ -173,21 +173,16 @@ class TestData:
         return result
 
 
-    def get_actual_superuser_refresh_token(self) -> RefreshTokenData:
+    def get_actual_superuser_refresh_token(self) -> RefreshTokenDTO:
         for refresh_token in test_data.fake_refresh_tokens:
             if not refresh_token.revoked and not refresh_token.expired and self.get_fake_user(refresh_token).is_superuser:
                 return refresh_token
 
 
-    def get_fake_user(self, refresh_token: RefreshTokenData) -> UserData:
+    def get_fake_user(self, refresh_token: RefreshTokenDTO) -> UserDTO:
         for user in test_data.fake_users:
             if refresh_token.user_ident == user.ident:
                 return user
 
 
 test_data = TestData()
-
-
-def get_request_refresh_tokens() -> list[RefreshTokenShema]:
-    tokens = json.load(open("test/test_data/request_refresh_tokens.json", "r", encoding="utf-8"))
-    return tokens

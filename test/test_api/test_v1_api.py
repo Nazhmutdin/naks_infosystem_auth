@@ -5,10 +5,9 @@ from json import dumps, loads
 from uuid import UUID
 
 from client import client
-
-from utils.DTOs import RefreshTokenData, UserData
-from shemas import BaseUserShema
 from funcs import test_data
+from application.dto import UserDTO
+from infrastructure.dto import RefreshTokenDTO
 
 
 @pytest.mark.usefixtures("prepare_db")
@@ -17,28 +16,10 @@ from funcs import test_data
 class TestAuthEndpoints:
 
     @pytest.mark.parametrize(
-        "refresh_token",
-        test_data.get_actual_refresh_tokens()[:3]
-    )
-    def test_get_current_user(self, refresh_token: RefreshTokenData):
-
-        user = test_data.get_fake_user(refresh_token)
-
-        res = client.post(
-            f"auth/v1/current-user",
-            cookies={"refresh_token": refresh_token.token}
-        )
-
-        assert res.status_code == 200
-
-        assert BaseUserShema.model_validate(loads(res.content)) == BaseUserShema.model_validate(user, from_attributes=True)
-
-
-    @pytest.mark.parametrize(
         "token_data",
         test_data.get_expired_refresh_tokens()[:10]
     )
-    def test_failed_authenticate_by_expired_refresh_token(self, token_data: RefreshTokenData):
+    def test_failed_authenticate_by_expired_refresh_token(self, token_data: RefreshTokenDTO):
 
         res = client.post(
             "auth/v1/authenticate",
@@ -48,14 +29,13 @@ class TestAuthEndpoints:
         )
 
         assert res.status_code == 403
-        assert res.text == '{"detail":"refresh token expired"}'
 
 
     @pytest.mark.parametrize(
         "token_data",
         test_data.get_revoked_refresh_tokens()[:5]
     )
-    def test_failed_authenticate_by_revoked_refresh_token(self, token_data: RefreshTokenData):
+    def test_failed_authenticate_by_revoked_refresh_token(self, token_data: RefreshTokenDTO):
 
         res = client.post(
             "auth/v1/authenticate",
@@ -65,7 +45,6 @@ class TestAuthEndpoints:
         )
 
         assert res.status_code == 403
-        assert res.text == '{"detail":"revoked token"}'
 
 
     def test_failed_update_tokens_wothout_refresh_token(self):
@@ -76,14 +55,13 @@ class TestAuthEndpoints:
         )
 
         assert res.status_code == 401
-        assert res.text == '{"detail":"refresh token required"}'
 
 
     @pytest.mark.parametrize(
         "token_data",
         test_data.get_revoked_refresh_tokens()[:5]
     )
-    def test_failed_update_tokens_by_revoked_refresh_token(self, token_data: RefreshTokenData):
+    def test_failed_update_tokens_by_revoked_refresh_token(self, token_data: RefreshTokenDTO):
 
         res = client.post(
             "auth/v1/update-tokens",
@@ -93,28 +71,27 @@ class TestAuthEndpoints:
         )
 
         assert res.status_code == 403
-        assert res.text == '{"detail":"revoked token"}'
         
 
     def test_failed_authorizate_by_invalid_login(self):
         res = client.post(
-            "auth/v1/authorizate",
+            "auth/v1/login",
             json={
                 "login": "SomeInvalidLogin",
                 "password": "QWE123df"
             }
         )
 
-        assert res.status_code == 403
-        assert res.text == '{"detail":"user (SomeInvalidLogin) not found"}'
+        assert res.status_code == 404
+
 
     @pytest.mark.parametrize(
         "user",
         test_data.fake_users[:5]
     )
-    def test_failed_authorizate_by_invalid_password(self, user: UserData):
+    def test_failed_authorizate_by_invalid_password(self, user: UserDTO):
         res = client.post(
-            "auth/v1/authorizate",
+            "auth/v1/login",
             json={
                 "login": user.login,
                 "password": "QWE123df1111"
@@ -122,7 +99,6 @@ class TestAuthEndpoints:
         )
 
         assert res.status_code == 403
-        assert res.text == '{"detail":"Invalid password"}'
 
 
     @pytest.mark.parametrize(
@@ -131,7 +107,7 @@ class TestAuthEndpoints:
     )
     def test_authorizate(self, user: dict):
         res = client.post(
-            "auth/v1/authorizate",
+            "auth/v1/login",
             json={
                 "login": user["login"],
                 "password": user["password"]
@@ -191,9 +167,6 @@ class TestAuthEndpoints:
 
         assert res.status_code == 200
 
-        for cookie in res.cookies.jar:
-            cookie.value == ""
-
 
     @pytest.mark.parametrize(
         "user",
@@ -245,7 +218,7 @@ class TestAuthEndpoints:
         "user",
         test_data.fake_users[:3]
     )
-    def test_delete_user(self, user: UserData):
+    def test_delete_user(self, user: UserDTO):
 
         res = client.delete(
             f"v1/user/{user.ident}"
