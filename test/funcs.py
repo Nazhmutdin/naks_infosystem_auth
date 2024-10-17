@@ -2,13 +2,14 @@ from uuid import uuid4
 from datetime import datetime, timedelta
 
 from faker import Faker
+from app.infrastructure.database.setup import create_engine
 
-from infrastructure.services.hasher import PasswordHasher
-from infrastructure.services.jwt_service import JwtService
-from infrastructure.dto import RefreshTokenDTO
-from application.dto import UserDTO
+from app.infrastructure.services.hasher import PasswordHasher
+from app.infrastructure.services.jwt_service import JwtService
+from app.application.dto import UserDTO, RefreshTokenDTO
 
 
+engine = create_engine()
 
 class IFakeDataGenerator:
     faker = Faker()

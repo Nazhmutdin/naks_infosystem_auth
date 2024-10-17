@@ -2,11 +2,10 @@ from asyncio import run
 
 import pytest
 
-from configs import DBConfig
-from infrastructure.database.models import Base
-from main.dependencies import container
+from app.configs import DBConfig
+from app.infrastructure.database.models import Base
 
-from funcs import test_data
+from funcs import test_data, engine
 
 
 @pytest.fixture(scope="module")
@@ -14,7 +13,7 @@ def prepare_db():
     assert DBConfig.DB_NAME() == "rhi_test_auth"
 
     async def start_db():
-        async with container.engine.begin() as conn:
+        async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.drop_all)
             await conn.run_sync(Base.metadata.create_all)
 

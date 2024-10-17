@@ -6,8 +6,7 @@ from uuid import UUID
 
 from client import client
 from funcs import test_data
-from application.dto import UserDTO
-from infrastructure.dto import RefreshTokenDTO
+from app.application.dto import UserDTO, RefreshTokenDTO
 
 
 @pytest.mark.usefixtures("prepare_db")
@@ -21,11 +20,10 @@ class TestAuthEndpoints:
     )
     def test_failed_authenticate_by_expired_refresh_token(self, token_data: RefreshTokenDTO):
 
+        client.cookies["refresh_token"] = token_data.token
+
         res = client.post(
-            "auth/v1/authenticate",
-            cookies={
-                "refresh_token": token_data.token
-            }
+            "auth/v1/authenticate"
         )
 
         assert res.status_code == 403
@@ -37,11 +35,10 @@ class TestAuthEndpoints:
     )
     def test_failed_authenticate_by_revoked_refresh_token(self, token_data: RefreshTokenDTO):
 
+        client.cookies["refresh_token"] = token_data.token
+
         res = client.post(
-            "auth/v1/authenticate",
-            cookies={
-                "refresh_token": token_data.token
-            }
+            "auth/v1/authenticate"
         )
 
         assert res.status_code == 403
@@ -49,9 +46,10 @@ class TestAuthEndpoints:
 
     def test_failed_update_tokens_wothout_refresh_token(self):
 
+        del client.cookies["refresh_token"]
+
         res = client.post(
-            "auth/v1/update-tokens",
-            cookies={}
+            "auth/v1/update-tokens"
         )
 
         assert res.status_code == 401
@@ -63,11 +61,10 @@ class TestAuthEndpoints:
     )
     def test_failed_update_tokens_by_revoked_refresh_token(self, token_data: RefreshTokenDTO):
 
+        client.cookies["refresh_token"] = token_data.token
+
         res = client.post(
-            "auth/v1/update-tokens",
-            cookies={
-                "refresh_token": token_data.token
-            }
+            "auth/v1/update-tokens"
         )
 
         assert res.status_code == 403
@@ -176,11 +173,10 @@ class TestAuthEndpoints:
 
         superuser_refresh_token = test_data.get_actual_superuser_refresh_token()
 
+        client.cookies["refresh_token"] = superuser_refresh_token.token
+
         res = client.post(
-            "auth/v1/authenticate",
-            cookies={
-                "refresh_token": superuser_refresh_token.token
-            }
+            "auth/v1/authenticate"
         )
 
         client.cookies["access_token"] = res.cookies.get("access_token")
