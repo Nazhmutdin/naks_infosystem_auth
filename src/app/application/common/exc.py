@@ -5,10 +5,10 @@ class CurrentUserNotFound(Exception):
     def __init__(
         self, 
         user_ident: UUID, 
-        access_token: str
+        refresh_token: str
     ) -> None:
         self.user_ident = user_ident
-        self.access_token = access_token
+        self.refresh_token = refresh_token
 
 
 class AccessForbidden(Exception): ...

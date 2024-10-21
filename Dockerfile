@@ -1,17 +1,43 @@
 FROM python:3.12.2-slim as build
 
-WORKDIR /src
 
-COPY requirements.txt .
-RUN pip3 wheel --no-cache-dir --wheel-dir /src/wheels -r requirements.txt
+ARG DATABASE_PASSWORD \
+    DATABASE_NAME \
+    USER \
+    PORT \
+    MODE \
+    HOST \
+    SECRET_KEY 
 
-FROM python:3.12.2-slim
+ENV DATABASE_PASSWORD=$DATABASE_PASSWORD \
+    DATABASE_NAME=$DATABASE_NAME \
+    USER=$USER \
+    PORT=$PORT \
+    MODE=$MODE \
+    HOST=$HOST \
+    POETRY_HOME=/opt/poetry \
+    POETRY_VENV=/opt/poetry-venv \
+    POETRY_CACHE_DIR=/opt/.cache \
+    SECRET_KEY=$SECRET_KEY 
 
-WORKDIR /src
+RUN python3 -m venv $POETRY_VENV \
+    && $POETRY_VENV/bin/pip install -U pip setuptools \
+    && $POETRY_VENV/bin/pip install poetry
 
-COPY --from=build /src/wheels /wheels
-COPY --from=build /src/requirements.txt .
 
-RUN pip install --no-cache /wheels/*
+#==================================================================================
+FROM build as base
+#==================================================================================
+
+
+COPY --from=build ${POETRY_VENV} ${POETRY_VENV}
+
+ENV PATH="${PATH}:${POETRY_VENV}/bin"
+
+WORKDIR /auth_service
+
+COPY poetry.lock pyproject.toml ./
+
+RUN poetry install --without dev
 
 COPY . .

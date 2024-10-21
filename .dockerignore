@@ -2,3 +2,4 @@ venv/
 winvenv/
 __pycache__/
 test/
+.git/

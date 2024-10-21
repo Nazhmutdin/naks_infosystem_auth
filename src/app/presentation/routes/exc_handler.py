@@ -112,7 +112,7 @@ async def access_token_cookie_not_found_handler(
     exception: AccessTokenCookieNotFound
 ) -> JSONResponse:
     return JSONResponse(
-        status_code=403,
+        status_code=401,
         content={
             "code": "access_token_cookie_not_found",
             "detail": "access token cookie not found"
@@ -125,7 +125,7 @@ async def refresh_token_not_found_handler(
     exception: RefreshTokenNotFound
 ) -> JSONResponse:
     return JSONResponse(
-        status_code=401,
+        status_code=403,
         content={
             "code": "refresh_token_not_found",
             "detail": f"refresh token ({exception.ident}) not found"

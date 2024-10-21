@@ -12,7 +12,7 @@ class DBConfig:
 
     @classmethod
     def DB_NAME(cls) -> str:
-        return os.getenv("AUTH_DATABASE_NAME")
+        return os.getenv("DATABASE_NAME")
     
     
     @classmethod

@@ -7,7 +7,6 @@ from naks_library.commiter import SqlAlchemyCommitter
 from app.infrastructure.database.setup import create_engine, create_session_maker
 
 
-
 class CoreProvider(Provider):
 
     @provide(scope=Scope.APP)

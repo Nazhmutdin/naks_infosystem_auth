@@ -101,17 +101,17 @@ class ApplicationProvider(Provider):
     @provide(scope=Scope.REQUEST)
     async def get_current_user(
         self,
-        access_token: AccessTokenDTO,
+        refresh_token: RefreshTokenDTO,
         get_user: GetUserInteractor
     ) -> CurrentUser:
-        user = await get_user(access_token.user_ident)
+        user = await get_user(refresh_token.user_ident)
 
         if user:
             return user
         
         raise CurrentUserNotFound(
-            user_ident=access_token.user_ident,
-            access_token=access_token.token
+            user_ident=refresh_token.user_ident,
+            refresh_token=refresh_token.token
         )
     
     
