@@ -3,11 +3,12 @@ from datetime import datetime, UTC
 from uuid import UUID
 
 from pydantic.dataclasses import dataclass
-from pydantic import EmailStr
+from pydantic import ConfigDict, EmailStr
 from naks_library.utils.validators import plain_datetime_serializer
+from naks_library.common.root import camel_case_alias_generator
 
 
-@dataclass
+@dataclass(config=ConfigDict(alias_generator=camel_case_alias_generator, populate_by_name=True))
 class UserDTO:
     ident: UUID
     login: str
@@ -20,11 +21,11 @@ class UserDTO:
     is_superuser: bool
 
 
-@dataclass
+@dataclass(config=ConfigDict(alias_generator=camel_case_alias_generator, populate_by_name=True))
 class CreateUserDTO(UserDTO): ...
 
 
-@dataclass
+@dataclass(config=ConfigDict(alias_generator=camel_case_alias_generator, populate_by_name=True))
 class UpdateUserDTO:
     name: str | None
     login: str | None
@@ -38,7 +39,7 @@ class UpdateUserDTO:
 type CurrentUser = UserDTO
 
 
-@dataclass
+@dataclass(config=ConfigDict(alias_generator=camel_case_alias_generator, populate_by_name=True))
 class RefreshTokenDTO:
     ident: UUID
     user_ident: UUID
@@ -52,36 +53,14 @@ class RefreshTokenDTO:
         return datetime.now(UTC).replace(tzinfo=None) > self.exp_dt
 
 
-@dataclass
+@dataclass(config=ConfigDict(alias_generator=camel_case_alias_generator, populate_by_name=True))
 class CreateRefreshTokenDTO(RefreshTokenDTO): ...
 
 
-@dataclass
+@dataclass(config=ConfigDict(alias_generator=camel_case_alias_generator, populate_by_name=True))
 class UpdateRefreshTokenDTO:
     user_ident: UUID | None
     token: str | None
     revoked: bool | None
     gen_dt: datetime | None 
     exp_dt: datetime | None
-
-
-def convert_create_refresh_token_dto_to_refresh_token_dto(dto: CreateRefreshTokenDTO) -> RefreshTokenDTO:
-    return RefreshTokenDTO(
-        ident=dto.ident,
-        user_ident=dto.user_ident,
-        token=dto.token,
-        revoked=dto.revoked,
-        gen_dt=dto.gen_dt,
-        exp_dt=dto.exp_dt
-    )
-
-
-def convert_refresh_token_dto_to_create_refresh_token_dto(dto: RefreshTokenDTO) -> CreateRefreshTokenDTO:
-    return RefreshTokenDTO(
-        ident=dto.ident,
-        user_ident=dto.user_ident,
-        token=dto.token,
-        revoked=dto.revoked,
-        gen_dt=dto.gen_dt,
-        exp_dt=dto.exp_dt
-    )

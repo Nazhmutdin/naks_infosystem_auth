@@ -4,7 +4,7 @@ import typing as t
 
 from pydantic import EmailStr, Field
 from naks_library import BaseShema
-from naks_library.utils.validators import before_optional_datetime_validator, before_datetime_validator
+from naks_library.utils.validators import before_optional_datetime_validator, before_datetime_validator, plain_datetime_serializer
 
 from app.infrastructure.services.hasher import PasswordHasher
 from app.application.dto import CreateUserDTO, UpdateUserDTO
@@ -40,9 +40,9 @@ class UserWithouPasswordShema(BaseShema):
     ident: UUID = Field(default_factory=uuid4)
     name: str
     email: EmailStr | None = Field(default=None)
-    sign_dt: t.Annotated[datetime, before_datetime_validator] = Field(default_factory=datetime.now)
-    update_dt: t.Annotated[datetime, before_datetime_validator] = Field(default_factory=datetime.now)
-    login_dt: t.Annotated[datetime, before_datetime_validator] = Field(default_factory=datetime.now)
+    sign_dt: t.Annotated[datetime, before_datetime_validator, plain_datetime_serializer] = Field(default_factory=datetime.now)
+    update_dt: t.Annotated[datetime, before_datetime_validator, plain_datetime_serializer] = Field(default_factory=datetime.now)
+    login_dt: t.Annotated[datetime, before_datetime_validator, plain_datetime_serializer] = Field(default_factory=datetime.now)
     is_superuser: bool = Field(default=False)
 
 
