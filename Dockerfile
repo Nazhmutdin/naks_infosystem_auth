@@ -1,21 +1,6 @@
 FROM python:3.12.2-slim as build
 
-
-ARG DATABASE_PASSWORD \
-    DATABASE_NAME \
-    USER \
-    PORT \
-    MODE \
-    HOST \
-    SECRET_KEY 
-
-ENV DATABASE_PASSWORD=$DATABASE_PASSWORD \
-    DATABASE_NAME=$DATABASE_NAME \
-    USER=$USER \
-    PORT=$PORT \
-    MODE=$MODE \
-    HOST=$HOST \
-    POETRY_HOME=/opt/poetry \
+ENV POETRY_HOME=/opt/poetry \
     POETRY_VENV=/opt/poetry-venv \
     POETRY_CACHE_DIR=/opt/.cache \
     SECRET_KEY=$SECRET_KEY 
