@@ -14,6 +14,7 @@ from app.application.interactors import (
     LogoutUserInteractor,
     ValidateAccessInteractor
 )
+from app.configs import ApplicationConfig
  
 
 auth_router = APIRouter(
@@ -32,8 +33,8 @@ async def login(
 
     response = Response()
 
-    response.set_cookie("refresh_token", refresh_token.token, samesite="none", secure=True, httponly=True, path="/auth", expires=refresh_token.exp_dt.replace(tzinfo=timezone.utc))
-    response.set_cookie("access_token", access_token.token, samesite="none", secure=True, httponly=True, path="/v1", expires=access_token.exp_dt.replace(tzinfo=timezone.utc))
+    response.set_cookie("refresh_token", refresh_token.token, domain=ApplicationConfig.DOMAIN(), samesite="strict", secure=True, httponly=True, path="/auth", expires=refresh_token.exp_dt.replace(tzinfo=timezone.utc))
+    response.set_cookie("access_token", access_token.token, domain=ApplicationConfig.DOMAIN(), samesite="strict", secure=True, httponly=True, expires=access_token.exp_dt.replace(tzinfo=timezone.utc))
 
     return response
 
@@ -48,7 +49,7 @@ async def authenticate(
     
     response = Response()
 
-    response.set_cookie("access_token", access_token.token, samesite="none", secure=True, httponly=True, path="/v1", expires=access_token.exp_dt.replace(tzinfo=timezone.utc))
+    response.set_cookie("access_token", access_token.token, domain=ApplicationConfig.DOMAIN(), samesite="strict", secure=True, httponly=True, expires=access_token.exp_dt.replace(tzinfo=timezone.utc))
 
     return response
 
@@ -63,8 +64,8 @@ async def update_tokens(
     
     response = Response()
 
-    response.set_cookie("refresh_token", new_refresh_token.token, samesite="none", secure=True, httponly=True, path="/auth", expires=new_refresh_token.exp_dt.replace(tzinfo=timezone.utc))
-    response.set_cookie("access_token", new_access_token.token, samesite="none", secure=True, httponly=True, path="/v1", expires=new_access_token.exp_dt.replace(tzinfo=timezone.utc))
+    response.set_cookie("refresh_token", new_refresh_token.token, domain=ApplicationConfig.DOMAIN(), samesite="strict", secure=True, httponly=True, path="/auth", expires=new_refresh_token.exp_dt.replace(tzinfo=timezone.utc))
+    response.set_cookie("access_token", new_access_token.token, domain=ApplicationConfig.DOMAIN(), samesite="strict", secure=True, httponly=True, expires=new_access_token.exp_dt.replace(tzinfo=timezone.utc))
 
     return response
 
@@ -97,7 +98,7 @@ async def logout(
     
     response = Response()
 
-    response.delete_cookie("refresh_token", samesite="none", secure=True, httponly=True)
-    response.delete_cookie("access_token", samesite="none", secure=True, httponly=True)
+    response.delete_cookie("refresh_token", domain=ApplicationConfig.DOMAIN(), path="/auth", samesite="strict", secure=True, httponly=True)
+    response.delete_cookie("access_token", domain=ApplicationConfig.DOMAIN(), samesite="strict", secure=True, httponly=True)
 
     return response
