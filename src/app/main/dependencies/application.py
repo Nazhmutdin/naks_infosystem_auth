@@ -3,23 +3,22 @@ from naks_library.commiter import SqlAlchemyCommitter
 from jose.exceptions import JWTError, JWTClaimsError
 from fastapi import Request
 
-from app.application.interfaces.gateways import UserGateway, RefreshTokenGateway
+from app.application.interfaces.gateways import UserGateway, RefreshTokenGateway, PermissionGateway
 from app.application.dto import RefreshTokenDTO, CurrentUser
 from app.application.interactors import (
     CreateUserInteractor, 
     GetUserInteractor, 
     UpdateUserInteractor, 
     DeleteUserInteractor,
-    CreateRefreshTokenInteractor, 
     GetRefreshTokenInteractor, 
-    UpdateRefreshTokenInteractor, 
-    DeleteRefreshTokenInteractor,
     LoginUserInteractor, 
     AuthenticateUserInteractor, 
     UpdateUserTokensInteractor,
     LogoutUserInteractor,
-    ValidateAccessInteractor,
-    CheckUserActionPermissionInteractor
+    ValidateDataAccessInteractor,
+    ValidateFileAccessInteractor,
+    GetUserPermissionsInteractor,
+    ValidateSuperUserAccessInteractor
 )
 from app.application.common.exc import (
     CurrentUserNotFound,
@@ -30,7 +29,7 @@ from app.application.common.exc import (
     InvalidAccessToken
 )
 from app.infrastructure.services import PasswordHasher, JwtService
-from app.infrastructure.database.mappers import UserMapper, RefreshTokenMapper
+from app.infrastructure.database.mappers import UserMapper, RefreshTokenMapper, PermissionMapper
 from app.infrastructure.dto import AccessTokenDTO
 
 
@@ -129,6 +128,14 @@ class ApplicationProvider(Provider):
         committer: SqlAlchemyCommitter,
     ) -> RefreshTokenGateway:
         return RefreshTokenMapper(committer.session)
+    
+    
+    @provide(scope=Scope.REQUEST)
+    async def get_permission_gateway(
+        self,
+        committer: SqlAlchemyCommitter,
+    ) -> PermissionGateway:
+        return PermissionMapper(committer.session)
 
 
     @provide(scope=Scope.REQUEST)
@@ -182,19 +189,6 @@ class ApplicationProvider(Provider):
 
 
     @provide(scope=Scope.REQUEST)
-    async def get_create_refresh_token_interactor(
-        self, 
-        committer: SqlAlchemyCommitter,
-        refresh_token_gateway: RefreshTokenGateway
-    ) -> CreateRefreshTokenInteractor:
-
-        return CreateRefreshTokenInteractor(
-            gateway=refresh_token_gateway,
-            commiter=committer
-        )
-
-
-    @provide(scope=Scope.REQUEST)
     async def get_refresh_token_data_interactor(
         self, 
         refresh_token_gateway: RefreshTokenGateway
@@ -202,32 +196,6 @@ class ApplicationProvider(Provider):
 
         return GetRefreshTokenInteractor(
             gateway=refresh_token_gateway
-        )
-
-
-    @provide(scope=Scope.REQUEST)
-    async def get_update_refresh_token_interactor(
-        self, 
-        committer: SqlAlchemyCommitter,
-        refresh_token_gateway: RefreshTokenGateway
-    ) -> UpdateRefreshTokenInteractor:
-
-        return UpdateRefreshTokenInteractor(
-            gateway=refresh_token_gateway,
-            commiter=committer
-        )
-
-
-    @provide(scope=Scope.REQUEST)
-    async def get_delete_refresh_token_interactor(
-        self, 
-        committer: SqlAlchemyCommitter,
-        refresh_token_gateway: RefreshTokenGateway
-    ) -> DeleteRefreshTokenInteractor:
-
-        return DeleteRefreshTokenInteractor(
-            gateway=refresh_token_gateway,
-            commiter=committer
         )
     
     
@@ -292,10 +260,40 @@ class ApplicationProvider(Provider):
     
     
     @provide(scope=Scope.REQUEST)
-    async def get_validate_access_interactor(self) -> ValidateAccessInteractor:
-        return ValidateAccessInteractor()
+    async def provide_validate_data_access_interactor(
+        self,
+        permission_gateway: PermissionGateway
+    ) -> ValidateDataAccessInteractor:
+        return ValidateDataAccessInteractor(
+            permission_gateway=permission_gateway
+        )
     
     
     @provide(scope=Scope.REQUEST)
-    async def get_check_user_action_permission_interactor(self) -> CheckUserActionPermissionInteractor:
-        return CheckUserActionPermissionInteractor()
+    async def provide_validate_file_access_interactor(
+        self,
+        permission_gateway: PermissionGateway
+    ) -> ValidateFileAccessInteractor:
+        return ValidateFileAccessInteractor(
+            permission_gateway=permission_gateway
+        )
+    
+    
+    @provide(scope=Scope.REQUEST)
+    async def provide_user_permissions(
+        self,
+        permission_gateway: PermissionGateway
+    ) -> GetUserPermissionsInteractor:
+        return GetUserPermissionsInteractor(
+            permission_gateway=permission_gateway
+        )
+    
+    
+    @provide(scope=Scope.REQUEST)
+    async def provide_validate_superuser_access_interactor(
+        self,
+        permission_gateway: PermissionGateway
+    ) -> ValidateSuperUserAccessInteractor:
+        return ValidateSuperUserAccessInteractor(
+            permission_gateway=permission_gateway
+        )

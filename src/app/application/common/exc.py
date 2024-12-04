@@ -52,3 +52,14 @@ class RefreshTokenExpired(Exception): ...
 
 
 class AccessTokenExpired(Exception): ...
+
+
+class PermissionDataNotFound(Exception): 
+    def __init__(self, user_ident: UUID):
+        self.user_ident = user_ident
+
+
+class OriginalMethodNotFound(Exception): ...
+
+
+class OriginalUriNotFound(Exception): ...

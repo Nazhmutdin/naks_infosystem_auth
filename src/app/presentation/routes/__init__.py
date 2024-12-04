@@ -1,5 +1,5 @@
 from app.presentation.routes.auth import auth_router
-from app.presentation.routes.user import user_router, CurrentUser
+from app.presentation.routes.user import user_router
 from app.presentation.routes.exc_handler import (
     current_user_not_found_handler,
     user_not_found_handler,

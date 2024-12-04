@@ -13,7 +13,10 @@ from app.application.common.exc import (
     InvalidRefreshToken,
     RefreshTokenRevoked,
     RefreshTokenExpired,
-    InvalidAccessToken
+    InvalidAccessToken,
+    PermissionDataNotFound,
+    OriginalMethodNotFound,
+    OriginalUriNotFound
 )
 from app.presentation.routes.user import user_router
 from app.presentation.routes.auth import auth_router
@@ -28,7 +31,10 @@ from app.presentation.routes.exc_handler import (
     invalid_refresh_token_handler,
     refresh_token_revoked_handler,
     refresh_token_expired_handler,
-    invalid_access_token_handler
+    invalid_access_token_handler,
+    permission_data_not_found_handler,
+    original_method_not_found_handler,
+    original_uri_not_found_handler
 )
 
 app = FastAPI()
@@ -46,6 +52,9 @@ app.add_exception_handler(InvalidRefreshToken, invalid_refresh_token_handler)
 app.add_exception_handler(RefreshTokenRevoked, refresh_token_revoked_handler)
 app.add_exception_handler(RefreshTokenExpired, refresh_token_expired_handler)
 app.add_exception_handler(InvalidAccessToken, invalid_access_token_handler)
+app.add_exception_handler(PermissionDataNotFound, permission_data_not_found_handler)
+app.add_exception_handler(OriginalMethodNotFound, original_method_not_found_handler)
+app.add_exception_handler(OriginalUriNotFound, original_uri_not_found_handler)
 
 app.include_router(user_router)
 app.include_router(auth_router)

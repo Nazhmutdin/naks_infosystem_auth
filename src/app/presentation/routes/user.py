@@ -1,33 +1,34 @@
 from fastapi import APIRouter, Response
 from dishka import FromDishka
-from dishka.integrations.fastapi import DishkaRoute
+from dishka.integrations.fastapi import inject
 
-from app.presentation.shemas import CreateUserShema, UpdateUserShema
-from app.application.dto import UserDTO, CurrentUser
+from app.application.dto import UserDTO
 from app.application.common.exc import UserNotFound
 from app.application.interactors import (
     CreateUserInteractor, 
     UpdateUserInteractor, 
     GetUserInteractor, 
-    DeleteUserInteractor, 
-    CheckUserActionPermissionInteractor
+    DeleteUserInteractor,
+    ValidateSuperUserAccessInteractor
 )
+from app.presentation.shemas import CreateUserShema, UpdateUserShema
+from app.infrastructure.dto import AccessTokenDTO
  
 
 user_router = APIRouter(
-    prefix="/v1",
-    route_class=DishkaRoute
+    prefix="/v1/user"
 )
 
-@user_router.post("/user")
+@user_router.post("/")
+@inject
 async def create_user(
     create_user: FromDishka[CreateUserInteractor],
-    check_access: FromDishka[CheckUserActionPermissionInteractor],
-    user: FromDishka[CurrentUser],
+    access_token: FromDishka[AccessTokenDTO],
+    validate_access: FromDishka[ValidateSuperUserAccessInteractor],
     data: CreateUserShema
 ) -> Response:
-
-    # await check_access(user)
+    
+    await validate_access(access_token)
 
     await create_user(data.to_dto())
 
@@ -36,15 +37,16 @@ async def create_user(
     )
 
 
-@user_router.get("/user/{ident}")
+@user_router.get("/{ident}")
+@inject
 async def get_user(
     ident: str,
-    check_access: FromDishka[CheckUserActionPermissionInteractor],
-    user: FromDishka[CurrentUser],
+    access_token: FromDishka[AccessTokenDTO],
+    validate_access: FromDishka[ValidateSuperUserAccessInteractor],
     get_user: FromDishka[GetUserInteractor]
 ) -> UserDTO:
-
-    await check_access(user)
+    
+    await validate_access(access_token)
 
     res = await get_user(ident)
 
@@ -54,16 +56,17 @@ async def get_user(
     raise UserNotFound(ident)
 
 
-@user_router.patch("/user/{ident}")
+@user_router.patch("/{ident}")
+@inject
 async def update_user(
-    check_access: FromDishka[CheckUserActionPermissionInteractor],
-    user: FromDishka[CurrentUser],
     ident: str,
     data: UpdateUserShema,
+    access_token: FromDishka[AccessTokenDTO],
+    validate_access: FromDishka[ValidateSuperUserAccessInteractor],
     update_user: FromDishka[UpdateUserInteractor]
 ) -> Response:
-
-    await check_access(user)
+    
+    await validate_access(access_token)
     
     await update_user(ident, data.to_dto())
 
@@ -72,15 +75,16 @@ async def update_user(
     )
 
 
-@user_router.delete("/user/{ident}")
+@user_router.delete("/{ident}")
+@inject
 async def delete_user(
-    check_access: FromDishka[CheckUserActionPermissionInteractor],
-    user: FromDishka[CurrentUser],
     ident: str,
+    access_token: FromDishka[AccessTokenDTO],
+    validate_access: FromDishka[ValidateSuperUserAccessInteractor],
     delete_user: FromDishka[DeleteUserInteractor]
 ) -> Response:
-
-    await check_access(user)
+    
+    await validate_access(access_token)
     
     await delete_user(ident)
 

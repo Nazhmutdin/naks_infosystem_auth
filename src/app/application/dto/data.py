@@ -18,7 +18,6 @@ class UserDTO:
     sign_dt: Annotated[datetime, plain_datetime_serializer] 
     update_dt: Annotated[datetime, plain_datetime_serializer] 
     login_dt: Annotated[datetime, plain_datetime_serializer] 
-    is_superuser: bool
 
 
 @dataclass(config=ConfigDict(alias_generator=camel_case_alias_generator, populate_by_name=True))
@@ -33,7 +32,6 @@ class UpdateUserDTO:
     sign_dt: datetime | None
     update_dt: datetime | None
     login_dt: datetime | None
-    is_superuser: bool | None
 
 
 type CurrentUser = UserDTO
@@ -64,3 +62,81 @@ class UpdateRefreshTokenDTO:
     revoked: bool | None
     gen_dt: datetime | None 
     exp_dt: datetime | None
+
+
+
+@dataclass(config=ConfigDict(alias_generator=camel_case_alias_generator, populate_by_name=True))
+class PermissionDTO:
+    ident: UUID
+    user_ident: UUID
+
+    is_super_user: bool
+
+    personal_data_get: bool
+    personal_data_create: bool
+    personal_data_update: bool
+    personal_data_delete: bool
+
+    personal_naks_certification_data_get: bool
+    personal_naks_certification_data_create: bool
+    personal_naks_certification_data_update: bool
+    personal_naks_certification_data_delete: bool
+
+    ndt_data_get: bool
+    ndt_data_create: bool
+    ndt_data_update: bool
+    ndt_data_delete: bool
+
+    acst_data_get: bool
+    acst_data_create: bool
+    acst_data_update: bool
+    acst_data_delete: bool
+
+    acst_file_download: bool
+    acst_file_upload: bool
+
+    personal_naks_certification_file_download: bool
+    personal_naks_certification_file_upload: bool
+
+    personal_naks_protocol_file_download: bool
+    personal_naks_protocol_file_upload: bool
+
+
+@dataclass(config=ConfigDict(alias_generator=camel_case_alias_generator, populate_by_name=True))
+class CreatePermissionDTO(PermissionDTO): ...
+
+
+@dataclass(config=ConfigDict(alias_generator=camel_case_alias_generator, populate_by_name=True))
+class UpdatePermissionDTO:
+
+    personal_data_get: bool | None
+    personal_data_create: bool | None
+    personal_data_update: bool | None
+    personal_data_delete: bool | None
+
+    personal_naks_certification_data_get: bool | None
+    personal_naks_certification_data_create: bool | None
+    personal_naks_certification_data_update: bool | None
+    personal_naks_certification_data_delete: bool | None
+
+    ndt_data_get: bool | None
+    ndt_data_create: bool | None
+    ndt_data_update: bool | None
+    ndt_data_delete: bool | None
+
+    acst_data_get: bool | None
+    acst_data_create: bool | None
+    acst_data_update: bool | None
+    acst_data_delete: bool | None
+
+    acst_file_download: bool | None
+    acst_file_upload: bool | None
+
+    personal_naks_certification_file_download: bool | None
+    personal_naks_certification_file_upload: bool | None
+
+    personal_naks_protocol_file_download: bool | None
+    personal_naks_protocol_file_upload: bool | None
+
+
+type CurrentUserPermission = PermissionDTO

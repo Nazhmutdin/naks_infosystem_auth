@@ -3,7 +3,9 @@ from app.application.interactors.auth import (
     AuthenticateUserInteractor, 
     UpdateUserTokensInteractor, 
     LogoutUserInteractor, 
-    ValidateAccessInteractor
+    ValidateDataAccessInteractor,
+    ValidateFileAccessInteractor,
+    ValidateSuperUserAccessInteractor
 )
 from app.application.interactors.user import (
     CreateUserInteractor, 
@@ -12,7 +14,7 @@ from app.application.interactors.user import (
     DeleteUserInteractor
 )
 from app.application.interactors.permission import (
-    CheckUserActionPermissionInteractor
+    GetUserPermissionsInteractor
 )
 from app.application.interactors.refresh_token import (
     CreateRefreshTokenInteractor, 

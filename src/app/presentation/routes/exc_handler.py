@@ -12,7 +12,10 @@ from app.application.common.exc import (
     InvalidRefreshToken,
     RefreshTokenRevoked,
     RefreshTokenExpired,
-    InvalidAccessToken
+    InvalidAccessToken,
+    PermissionDataNotFound,
+    OriginalMethodNotFound,
+    OriginalUriNotFound
 )
 
 
@@ -157,3 +160,41 @@ async def refresh_token_expired_handler(
             "detail": "refresh token expired"
         }
     )
+
+
+async def permission_data_not_found_handler(
+    request: Request,
+    exception: PermissionDataNotFound
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=403,
+        content={
+            "code": "permission_data_not_found",
+            "detail": f"internal error; permissions for user ({exception.user_ident}) don't exist"
+        }
+    )
+
+async def original_method_not_found_handler(
+    request: Request,
+    exception: OriginalMethodNotFound
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=400,
+        content={
+            "code": "original_method_not_found",
+            "detail": "internal error; original method header doesn't present"
+        }
+    )
+
+async def original_uri_not_found_handler(
+    request: Request,
+    exception: OriginalUriNotFound
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=400,
+        content={
+            "code": "original_uri_not_found",
+            "detail": "internal error; original uri header doesn't present"
+        }
+    )
+

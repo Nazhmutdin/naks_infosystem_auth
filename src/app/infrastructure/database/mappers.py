@@ -9,9 +9,12 @@ from app.application.dto import (
     UpdateUserDTO,
     RefreshTokenDTO,
     CreateRefreshTokenDTO,
-    UpdateRefreshTokenDTO
+    UpdateRefreshTokenDTO,
+    PermissionDTO,
+    CreatePermissionDTO,
+    UpdatePermissionDTO
 )
-from app.infrastructure.database.models import UserModel, RefreshTokenModel
+from app.infrastructure.database.models import UserModel, RefreshTokenModel, PermissionModel
 
 
 class UserMapper(SqlAlchemyCrudMapper[UserDTO, CreateUserDTO, UpdateUserDTO]):
@@ -37,8 +40,7 @@ class UserMapper(SqlAlchemyCrudMapper[UserDTO, CreateUserDTO, UpdateUserDTO]):
             hashed_password=row.hashed_password,
             sign_dt=row.sign_dt,
             update_dt=row.update_dt,
-            login_dt=row.login_dt,
-            is_superuser=row.is_superuser
+            login_dt=row.login_dt
         )
 
 
@@ -56,6 +58,23 @@ class RefreshTokenMapper(SqlAlchemyCrudMapper[RefreshTokenDTO, CreateRefreshToke
         await self.session.execute(stmt)
 
 
-
     def _convert(self, row: RefreshTokenModel) -> RefreshTokenDTO:
         return RefreshTokenDTO(**row.__dict__)
+
+
+class PermissionMapper(SqlAlchemyCrudMapper[PermissionDTO, CreatePermissionDTO, UpdatePermissionDTO]):
+    __model__ = PermissionModel
+
+
+    async def get_by_user_ident(self, user_ident: UUID) -> PermissionDTO | None:
+        stmt = select(PermissionModel).where(
+            PermissionModel.user_ident == user_ident
+        )
+        res = (await self.session.execute(stmt)).scalars().one_or_none()
+
+        if res:
+            return self._convert(res)
+
+
+    def _convert(self, row: PermissionModel) -> PermissionDTO:
+        return PermissionDTO(**row.__dict__)

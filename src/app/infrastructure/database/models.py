@@ -8,7 +8,6 @@ import sqlalchemy as sa
 
 __all__ = [
     "Base",
-    "UserGroupModel",
     "UserModel",
     "RefreshTokenModel",
     "PermissionModel"
@@ -16,14 +15,6 @@ __all__ = [
 
 
 class Base(DeclarativeBase): ...
-
-
-class UserGroupModel(Base):
-    __tablename__ = "user_group_table"
-
-    ident: Mapped[uuid.UUID] = sa.Column(sa.UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid.uuid4)
-    user_ident: Mapped[uuid.UUID] = sa.Column(sa.UUID(as_uuid=True), sa.ForeignKey("user_table.ident", ondelete="CASCADE", onupdate="CASCADE"), nullable=False)
-    name: Mapped[str] = sa.Column(sa.String(), nullable=False)
 
 
 class UserModel(Base):
@@ -37,7 +28,6 @@ class UserModel(Base):
     sign_dt: Mapped[datetime] = sa.Column(sa.DateTime(), nullable=False)
     update_dt: Mapped[datetime] = sa.Column(sa.DateTime(), nullable=False)
     login_dt: Mapped[datetime] = sa.Column(sa.DateTime(), nullable=False)
-    is_superuser: Mapped[bool] = sa.Column(sa.Boolean(), nullable=False)
 
     __table_args__ = (
         Index("user_ident_idx", ident),
@@ -67,17 +57,33 @@ class PermissionModel(Base):
     ident: Mapped[uuid.UUID] = sa.Column(sa.UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid.uuid4)
     user_ident: Mapped[uuid.UUID] = sa.Column(sa.UUID(as_uuid=True), sa.ForeignKey("user_table.ident", ondelete="CASCADE", onupdate="CASCADE"), nullable=False)
 
+    is_super_user: Mapped[bool] = sa.Column(sa.Boolean(), nullable=False)
+
     personal_data_get: Mapped[bool] = sa.Column(sa.Boolean(), nullable=False, default=False)
     personal_data_create: Mapped[bool] = sa.Column(sa.Boolean(), nullable=False, default=False)
     personal_data_update: Mapped[bool] = sa.Column(sa.Boolean(), nullable=False, default=False)
     personal_data_delete: Mapped[bool] = sa.Column(sa.Boolean(), nullable=False, default=False)
 
-    personal_certification_data_get: Mapped[bool] = sa.Column(sa.Boolean(), nullable=False, default=False)
-    personal_certification_data_create: Mapped[bool] = sa.Column(sa.Boolean(), nullable=False, default=False)
-    personal_certification_data_update: Mapped[bool] = sa.Column(sa.Boolean(), nullable=False, default=False)
-    personal_certification_data_delete: Mapped[bool] = sa.Column(sa.Boolean(), nullable=False, default=False)
+    personal_naks_certification_data_get: Mapped[bool] = sa.Column(sa.Boolean(), nullable=False, default=False)
+    personal_naks_certification_data_create: Mapped[bool] = sa.Column(sa.Boolean(), nullable=False, default=False)
+    personal_naks_certification_data_update: Mapped[bool] = sa.Column(sa.Boolean(), nullable=False, default=False)
+    personal_naks_certification_data_delete: Mapped[bool] = sa.Column(sa.Boolean(), nullable=False, default=False)
 
     ndt_data_get: Mapped[bool] = sa.Column(sa.Boolean(), nullable=False, default=False)
     ndt_data_create: Mapped[bool] = sa.Column(sa.Boolean(), nullable=False, default=False)
     ndt_data_update: Mapped[bool] = sa.Column(sa.Boolean(), nullable=False, default=False)
     ndt_data_delete: Mapped[bool] = sa.Column(sa.Boolean(), nullable=False, default=False)
+
+    acst_data_get: Mapped[bool] = sa.Column(sa.Boolean(), nullable=False, default=False)
+    acst_data_create: Mapped[bool] = sa.Column(sa.Boolean(), nullable=False, default=False)
+    acst_data_update: Mapped[bool] = sa.Column(sa.Boolean(), nullable=False, default=False)
+    acst_data_delete: Mapped[bool] = sa.Column(sa.Boolean(), nullable=False, default=False)
+
+    acst_file_download: Mapped[bool] = sa.Column(sa.Boolean(), nullable=False, default=False)
+    acst_file_upload: Mapped[bool] = sa.Column(sa.Boolean(), nullable=False, default=False)
+
+    personal_naks_certification_file_download: Mapped[bool] = sa.Column(sa.Boolean(), nullable=False, default=False)
+    personal_naks_certification_file_upload: Mapped[bool] = sa.Column(sa.Boolean(), nullable=False, default=False)
+
+    personal_naks_protocol_file_download: Mapped[bool] = sa.Column(sa.Boolean(), nullable=False, default=False)
+    personal_naks_protocol_file_upload: Mapped[bool] = sa.Column(sa.Boolean(), nullable=False, default=False)

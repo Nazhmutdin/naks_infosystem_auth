@@ -5,7 +5,7 @@ from copy import copy
 
 from jose.jwt import encode as jwt_encode, decode as jwt_decode
 
-from app.configs import ApplicationConfig
+from app.config import ApplicationConfig
 
 
 class AccessTokenPayload(TypedDict):

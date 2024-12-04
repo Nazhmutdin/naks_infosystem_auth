@@ -1,4 +1,15 @@
-from app.application.dto.data import UserDTO, CreateUserDTO, UpdateUserDTO, CurrentUser, RefreshTokenDTO, CreateRefreshTokenDTO, UpdateRefreshTokenDTO
+from app.application.dto.data import (
+    UserDTO, 
+    CreateUserDTO, 
+    UpdateUserDTO, 
+    CurrentUser, 
+    RefreshTokenDTO, 
+    CreateRefreshTokenDTO, 
+    UpdateRefreshTokenDTO,
+    PermissionDTO,
+    CreatePermissionDTO,
+    UpdatePermissionDTO
+)
 
 
 def convert_create_refresh_token_dto_to_refresh_token_dto(dto: CreateRefreshTokenDTO) -> RefreshTokenDTO:

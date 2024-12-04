@@ -2,14 +2,24 @@ from uuid import uuid4
 from datetime import timedelta, datetime
 
 from naks_library.interfaces import ICommitter
+from fastapi import Request
 
-from app.application.interfaces.gateways import UserGateway, RefreshTokenGateway
-from app.application.common.exc import UserNotFound, InvalidPassword, RefreshTokenRevoked, AccessTokenExpired
-from app.application.dto import UserDTO, RefreshTokenDTO, convert_refresh_token_dto_to_create_refresh_token_dto
+from app.application.interfaces.gateways import UserGateway, RefreshTokenGateway, PermissionGateway
+from app.application.common.exc import (
+    UserNotFound, 
+    InvalidPassword, 
+    RefreshTokenRevoked,
+    AccessTokenExpired, 
+    OriginalMethodNotFound, 
+    OriginalUriNotFound,
+    PermissionDataNotFound,
+    AccessForbidden
+)
+from app.application.dto import UserDTO, RefreshTokenDTO, PermissionDTO, convert_refresh_token_dto_to_create_refresh_token_dto
 from app.infrastructure.dto import AccessTokenDTO, LoginData
 from app.infrastructure.services.jwt_service import JwtService
 from app.infrastructure.services.hasher import PasswordHasher
-from app.configs import ApplicationConfig
+from app.config import ApplicationConfig
 
 
 def gen_new_refresh_token(user: UserDTO, jwt_service: JwtService) -> RefreshTokenDTO:
@@ -180,9 +190,147 @@ class LogoutUserInteractor:
         await self.commiter.commit()
 
 
-class ValidateAccessInteractor:
+class ValidateDataAccessInteractor:
+
+    def __init__(
+            self,
+            permission_gateway: PermissionGateway
+    ):
+        self.permission_gateway = permission_gateway
     
-    async def __call__(self, access_token: AccessTokenDTO):
+
+    async def __call__(self, access_token: AccessTokenDTO, request: Request):
+        original_method = request.headers.get("x-original-method")
+        original_uri = request.headers.get("x-original-uri")
+
+        permissions = await self.permission_gateway.get_by_user_ident(access_token.user_ident)
+    
+        if not permissions:
+            raise PermissionDataNotFound(user_ident=access_token.user_ident)
+
+
+        if permissions.is_super_user:
+            return
+
+
+        if not original_method:
+            raise OriginalMethodNotFound
+
+
+        if not original_uri:
+            raise OriginalUriNotFound
+
 
         if access_token.expired:
             raise AccessTokenExpired
+
+
+        if not self.is_permitted(
+            uri=original_uri,
+            method=original_method,
+            permissions=permissions
+        ):
+            raise AccessForbidden
+
+
+    def is_permitted(self, uri: str, method: str, permissions: PermissionDTO) -> bool:
+
+        if "v1/personal-naks-certification" in uri:
+            return self._get_permission("personal_naks_certification_data", method, permissions)
+
+        elif "v1/personal" in uri:
+            return self._get_permission("personal_data", method, permissions)
+
+        elif "v1/ndt" in uri:
+            return self._get_permission("ndt_data", method, permissions)
+
+        elif "v1/acst" in uri:
+            return self._get_permission("acst_data", method, permissions)
+
+
+    def _get_permission(self, start_with: str, method: str, permissions: PermissionDTO) -> bool:
+        if method == "GET":
+            method = "get"
+        elif method == "POST":
+            method = "create"
+        elif method == "PATCH":
+            method = "update"
+        elif method == "DELETE":
+            method = "delete"
+   
+        res = permissions.__dict__.get(f"{start_with}_{method}")
+
+        return res
+
+
+class ValidateFileAccessInteractor:
+
+    def __init__(
+            self,
+            permission_gateway: PermissionGateway
+    ):
+        self.permission_gateway = permission_gateway
+    
+
+    async def __call__(self, access_token: AccessTokenDTO, request: Request):
+        original_method = request.headers.get("x-original-method")
+        original_uri = request.headers.get("x-original-uri")
+
+        permissions = await self.permission_gateway.get_by_user_ident(access_token.user_ident)
+    
+        if not permissions:
+            raise PermissionDataNotFound(user_ident=access_token.user_ident)
+
+
+        if permissions.is_super_user:
+            return
+
+
+        if not original_method:
+            raise OriginalMethodNotFound
+
+
+        if not original_uri:
+            raise OriginalUriNotFound
+
+
+        if access_token.expired:
+            raise AccessTokenExpired
+
+
+        if not self.is_permitted(
+            uri=original_uri,
+            method=original_method,
+            permissions=permissions
+        ):
+            raise AccessForbidden
+
+
+    def is_permitted(self, uri: str, method: str, permissions: PermissionDTO) -> bool:
+
+        raise NotImplementedError
+
+
+    def _get_permission(self, start_with: str, method: str, permissions: PermissionDTO) -> bool: ...
+
+
+
+class ValidateSuperUserAccessInteractor:
+
+    def __init__(
+            self,
+            permission_gateway: PermissionGateway
+    ):
+        self.permission_gateway = permission_gateway
+    
+
+    async def __call__(self, access_token: AccessTokenDTO):
+
+        permissions = await self.permission_gateway.get_by_user_ident(access_token.user_ident)
+    
+        if not permissions:
+            raise PermissionDataNotFound(user_ident=access_token.user_ident)
+
+
+        if not permissions.is_super_user:
+            raise AccessForbidden

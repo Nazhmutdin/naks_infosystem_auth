@@ -1,21 +1,24 @@
 from datetime import timezone
 
-from fastapi import APIRouter, Response
+from fastapi import APIRouter, Response, Request
 from dishka import FromDishka
 from dishka.integrations.fastapi import DishkaRoute
 
 from app.presentation.shemas import UserWithouPasswordShema
 from app.infrastructure.dto import LoginData, AccessTokenDTO
-from app.application.dto import RefreshTokenDTO, CurrentUser
+from app.application.dto import RefreshTokenDTO, CurrentUser, PermissionDTO
 from app.application.interactors import (
     LoginUserInteractor,
     AuthenticateUserInteractor,
     UpdateUserTokensInteractor,
     LogoutUserInteractor,
-    ValidateAccessInteractor
+    ValidateDataAccessInteractor,
+    GetUserPermissionsInteractor,
+    ValidateFileAccessInteractor
 )
-from app.configs import ApplicationConfig
- 
+from app.application.common.exc import PermissionDataNotFound
+from app.config import ApplicationConfig
+
 
 auth_router = APIRouter(
     prefix="/auth/v1",
@@ -70,24 +73,6 @@ async def update_tokens(
     return response
 
 
-@auth_router.post("/validate-access")
-async def validate_access(
-    validate_access_action: FromDishka[ValidateAccessInteractor],
-    access_token: FromDishka[AccessTokenDTO]
-) -> Response:
-    
-    await validate_access_action(access_token)
-    
-    response = Response()
-
-    return response
-        
-
-@auth_router.post("/me")
-async def me(user: FromDishka[CurrentUser]) -> UserWithouPasswordShema:
-    return user
-
-
 @auth_router.post("/logout")
 async def logout(
     logout_action: FromDishka[LogoutUserInteractor],
@@ -102,3 +87,55 @@ async def logout(
     response.delete_cookie("access_token", domain=ApplicationConfig.DOMAIN(), samesite="strict", secure=True, httponly=True)
 
     return response
+
+
+@auth_router.post("/validate-data-access")
+async def validate_data_access(
+    validate_access_action: FromDishka[ValidateDataAccessInteractor],
+    access_token: FromDishka[AccessTokenDTO],
+    request: Request
+) -> Response:
+    
+    await validate_access_action(
+        access_token=access_token, 
+        request=request
+    )
+    
+    response = Response()
+
+    return response
+
+
+@auth_router.post("/validate-file-access")
+async def validate_file_access(
+    validate_access_action: FromDishka[ValidateFileAccessInteractor],
+    access_token: FromDishka[AccessTokenDTO],
+    request: Request
+) -> Response:
+    
+    await validate_access_action(
+        access_token=access_token, 
+        request=request
+    )
+    
+    response = Response()
+
+    return response
+
+
+@auth_router.post("/me/permissions")
+async def permissions(
+    user: FromDishka[CurrentUser],
+    get_permissions: FromDishka[GetUserPermissionsInteractor]
+) -> PermissionDTO:
+    res =  await get_permissions(user)
+    
+    if not res:
+        raise PermissionDataNotFound(user_ident=user.ident)
+    
+    return res
+
+
+@auth_router.post("/me")
+async def me(user: FromDishka[CurrentUser]) -> UserWithouPasswordShema:
+    return user
