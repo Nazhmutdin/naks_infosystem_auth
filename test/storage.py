@@ -259,19 +259,11 @@ class StorageTestData:
             
     
     def get_fake_superuser(self) -> UserDTO:
-        for permission in self.fake_permissions:
-            if permission.is_super_user:
-                for user in self.fake_users:
-                    if user.ident == permission.user_ident:
-                        return user
+        return self.fake_users[0]
             
     
     def get_fake_superuser_dict(self) -> dict:
-        for permission in self.fake_permissions:
-            if permission.is_super_user:
-                for user in self.fake_users_dicts:
-                    if user["ident"] == permission.user_ident:
-                        return user
+        return self.fake_users_dicts[0]
                     
 
     def get_user_permission(self, user_ident: UUID) -> PermissionDTO:

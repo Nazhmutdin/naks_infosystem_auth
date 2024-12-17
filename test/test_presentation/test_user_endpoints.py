@@ -10,7 +10,7 @@ from app.application.dto import UserDTO
 @pytest.mark.usefixtures("add_refresh_tokens")
 @pytest.mark.usefixtures("add_permissions")
 @pytest.mark.usefixtures("add_users")
-class TestAuthEndpoints:
+class TestUserEndpoints:
 
     @pytest.mark.parametrize(
         "user",
@@ -50,7 +50,10 @@ class TestAuthEndpoints:
     def test_get_user_forbidden(self, ident: UUID):
 
         res = client.get(
-            f"v1/user/{ident.hex}",
+            "v1/user/",
+            params={
+                "ident": ident
+            },
             headers={
                 "x-original-method": "GET",
                 "x-original-uri": "v1/user"
@@ -69,7 +72,10 @@ class TestAuthEndpoints:
         del data["ident"]
 
         res = client.patch(
-            f"v1/user/{ident}",
+            "v1/user/",
+            params={
+                "ident": ident
+            },
             headers={
                 "x-original-method": "PATCH",
                 "x-original-uri": "v1/user"
@@ -87,7 +93,10 @@ class TestAuthEndpoints:
     def test_delete_user_forbidden(self, user: UserDTO):
 
         res = client.delete(
-            f"v1/user/{user.ident}",
+            "v1/user/",
+            params={
+                "ident": user.ident
+            },
             headers={
                 "x-original-method": "DELETE",
                 "x-original-uri": "v1/user"
@@ -136,7 +145,10 @@ class TestAuthEndpoints:
     def test_get_user(self, ident: UUID):
 
         res = client.get(
-            f"v1/user/{ident.hex}",
+            "v1/user/",
+            params={
+                "ident": ident
+            },
             headers={
                 "x-original-method": "GET",
                 "x-original-uri": "v1/user"
@@ -155,7 +167,10 @@ class TestAuthEndpoints:
         del data["ident"]
 
         res = client.patch(
-            f"v1/user/{ident}",
+            "v1/user",
+            params={
+                "ident": ident
+            },
             headers={
                 "x-original-method": "PATCH",
                 "x-original-uri": "v1/user"
@@ -174,7 +189,10 @@ class TestAuthEndpoints:
     def test_delete_user(self, user: UserDTO):
 
         res = client.delete(
-            f"v1/user/{user.ident}",
+            "v1/user",
+            params={
+                "ident": user.ident
+            },
             headers={
                 "x-original-method": "DELETE",
                 "x-original-uri": "v1/user"

@@ -277,13 +277,13 @@ class TestAuthEndpoints:
                 method = "DELETE"
 
             if uri == "personal_data":
-                uri = "v1/personal"
+                uri = "/v1/personal"
             elif uri == "personal_naks_certification_data":
-                uri = "v1/personal-naks-certification"
+                uri = "/v1/personal-naks-certification"
             elif uri == "ndt_data":
-                uri = "v1/ndt"
+                uri = "/v1/ndt"
             elif uri == "acst_data":
-                uri = "v1/acst"
+                uri = "/v1/acst"
              
 
             res = client.post(
