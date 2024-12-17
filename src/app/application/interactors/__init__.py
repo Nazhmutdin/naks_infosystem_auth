@@ -3,9 +3,7 @@ from app.application.interactors.auth import (
     AuthenticateUserInteractor, 
     UpdateUserTokensInteractor, 
     LogoutUserInteractor, 
-    ValidateDataAccessInteractor,
-    ValidateFileAccessInteractor,
-    ValidateSuperUserAccessInteractor
+    ValidateAccessInteractor
 )
 from app.application.interactors.user import (
     CreateUserInteractor, 

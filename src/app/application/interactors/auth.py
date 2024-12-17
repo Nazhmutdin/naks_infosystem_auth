@@ -1,3 +1,4 @@
+import typing as t
 from uuid import uuid4
 from datetime import timedelta, datetime
 
@@ -82,7 +83,9 @@ class LoginUserInteractor:
         user = await self.user_gateway.get_by_login(data.login)
 
         if not user:
-            raise UserNotFound(data.login)
+            raise UserNotFound(
+                data.login
+            )
 
         if not PasswordHasher().verify(data.password, user.hashed_password):
             raise InvalidPassword
@@ -190,18 +193,51 @@ class LogoutUserInteractor:
         await self.commiter.commit()
 
 
-class ValidateDataAccessInteractor:
+class ValidateAccessInteractor:
 
     def __init__(
             self,
             permission_gateway: PermissionGateway
     ):
-        self.permission_gateway = permission_gateway
-    
+        self.permission_gateway=permission_gateway
 
+        self.func_map: dict[t.Callable[[PermissionDTO], None]]={
+            "GET-/v1/user": self._get_user_data,
+            "PATCH-/v1/user": self._update_user_data,
+            "POST-/v1/user": self._add_user_data,
+            "DELETE-/v1/user": self._delete_user_data,
+
+            "GET-/v1/personal": self._get_personal_data,
+            "GET-/v1/personal/select": self._get_personal_data,
+            "PATCH-/v1/personal": self._update_personal_data,
+            "POST-/v1/personal": self._add_personal_data,
+            "DELETE-/v1/personal": self._delete_personal_data,
+
+            "GET-/v1/ndt": self._get_ndt_data,
+            "GET-/v1/ndt/select": self._get_ndt_data,
+            "GET-/v1/ndt/personal": self._get_ndt_data,
+            "PATCH-/v1/ndt": self._update_ndt_data,
+            "POST-/v1/ndt": self._add_ndt_data,
+            "DELETE-/v1/ndt": self._delete_ndt_data,
+
+            "GET-/v1/personal-naks-certification": self._get_personal_naks_certification_data,
+            "GET-/v1/personal-naks-certification/select": self._get_personal_naks_certification_data,
+            "GET-/v1/personal-naks-certification/personal": self._get_personal_naks_certification_data,
+            "PATCH-/v1/personal-naks-certification": self._update_personal_naks_certification_data,
+            "POST-/v1/personal-naks-certification": self._add_personal_naks_certification_data,
+            "DELETE-/v1/personal-naks-certification": self._delete_personal_naks_certification_data,
+
+            "GET-/v1/acst": self._get_acst_data,
+            "GET-/v1/acst/select": self._get_acst_data,
+            "PATCH-/v1/acst": self._update_acst_data,
+            "POST-/v1/acst": self._add_acst_data,
+            "DELETE-/v1/acst": self._delete_acst_data
+        }
+
+    
     async def __call__(self, access_token: AccessTokenDTO, request: Request):
         original_method = request.headers.get("x-original-method")
-        original_uri = request.headers.get("x-original-uri")
+        original_uri = request.headers.get("x-original-uri").split("?")[0]
 
         permissions = await self.permission_gateway.get_by_user_ident(access_token.user_ident)
     
@@ -223,114 +259,111 @@ class ValidateDataAccessInteractor:
 
         if access_token.expired:
             raise AccessTokenExpired
+        
+        
 
+        self.func_map.get(f"{original_method}-{original_uri}", self.func_not_found_handler)(permissions)
 
-        if not self.is_permitted(
-            uri=original_uri,
-            method=original_method,
-            permissions=permissions
-        ):
-            raise AccessForbidden
-
-
-    def is_permitted(self, uri: str, method: str, permissions: PermissionDTO) -> bool:
-
-        if "v1/personal-naks-certification" in uri:
-            return self._get_permission("personal_naks_certification_data", method, permissions)
-
-        elif "v1/personal" in uri:
-            return self._get_permission("personal_data", method, permissions)
-
-        elif "v1/ndt" in uri:
-            return self._get_permission("ndt_data", method, permissions)
-
-        elif "v1/acst" in uri:
-            return self._get_permission("acst_data", method, permissions)
-
-
-    def _get_permission(self, start_with: str, method: str, permissions: PermissionDTO) -> bool:
-        if method == "GET":
-            method = "get"
-        elif method == "POST":
-            method = "create"
-        elif method == "PATCH":
-            method = "update"
-        elif method == "DELETE":
-            method = "delete"
-   
-        res = permissions.__dict__.get(f"{start_with}_{method}")
-
-        return res
-
-
-class ValidateFileAccessInteractor:
-
-    def __init__(
-            self,
-            permission_gateway: PermissionGateway
-    ):
-        self.permission_gateway = permission_gateway
     
-
-    async def __call__(self, access_token: AccessTokenDTO, request: Request):
-        original_method = request.headers.get("x-original-method")
-        original_uri = request.headers.get("x-original-uri")
-
-        permissions = await self.permission_gateway.get_by_user_ident(access_token.user_ident)
-    
-        if not permissions:
-            raise PermissionDataNotFound(user_ident=access_token.user_ident)
+    def func_not_found_handler(self, permissions: PermissionDTO):
+        raise AccessForbidden()
 
 
-        if permissions.is_super_user:
-            return
-
-
-        if not original_method:
-            raise OriginalMethodNotFound
-
-
-        if not original_uri:
-            raise OriginalUriNotFound
-
-
-        if access_token.expired:
-            raise AccessTokenExpired
-
-
-        if not self.is_permitted(
-            uri=original_uri,
-            method=original_method,
-            permissions=permissions
-        ):
-            raise AccessForbidden
-
-
-    def is_permitted(self, uri: str, method: str, permissions: PermissionDTO) -> bool:
-
-        raise NotImplementedError
-
-
-    def _get_permission(self, start_with: str, method: str, permissions: PermissionDTO) -> bool: ...
-
-
-
-class ValidateSuperUserAccessInteractor:
-
-    def __init__(
-            self,
-            permission_gateway: PermissionGateway
-    ):
-        self.permission_gateway = permission_gateway
-    
-
-    async def __call__(self, access_token: AccessTokenDTO):
-
-        permissions = await self.permission_gateway.get_by_user_ident(access_token.user_ident)
-    
-        if not permissions:
-            raise PermissionDataNotFound(user_ident=access_token.user_ident)
-
-
+    def _get_user_data(self, permissions: PermissionDTO) -> None:
         if not permissions.is_super_user:
-            raise AccessForbidden
+            raise AccessForbidden()
+        
+
+    def _update_user_data(self, permissions: PermissionDTO) -> None:
+        if not permissions.is_super_user:
+            raise AccessForbidden()
+
+
+    def _add_user_data(self, permissions: PermissionDTO) -> None:
+        if not permissions.is_super_user:
+            raise AccessForbidden()
+
+
+    def _delete_user_data(self, permissions: PermissionDTO) -> None:
+        if not permissions.is_super_user:
+            raise AccessForbidden()
+
+
+    def _get_personal_data(self, permissions: PermissionDTO) -> None:
+        if not permissions.personal_data_get:
+            raise AccessForbidden()
+        
+
+    def _update_personal_data(self, permissions: PermissionDTO) -> None:
+        if not permissions.personal_data_update:
+            raise AccessForbidden()
+
+
+    def _add_personal_data(self, permissions: PermissionDTO) -> None:
+        if not permissions.personal_data_create:
+            raise AccessForbidden()
+
+
+    def _delete_personal_data(self, permissions: PermissionDTO) -> None:
+        if not permissions.personal_data_delete:
+            raise AccessForbidden()
+
+
+    def _get_ndt_data(self, permissions: PermissionDTO) -> None:
+        if not permissions.ndt_data_get:
+            raise AccessForbidden()
+
+
+    def _update_ndt_data(self, permissions: PermissionDTO) -> None:
+        if not permissions.ndt_data_update:
+            raise AccessForbidden()
+
+
+    def _add_ndt_data(self, permissions: PermissionDTO) -> None: 
+        if not permissions.ndt_data_create:
+            raise AccessForbidden()
+
+
+    def _delete_ndt_data(self, permissions: PermissionDTO) -> None: 
+        if not permissions.ndt_data_delete:
+            raise AccessForbidden()
+
+
+    def _get_personal_naks_certification_data(self, permissions: PermissionDTO) -> None:  
+        if not permissions.personal_naks_certification_data_get:
+            raise AccessForbidden()
+        
+
+    def _update_personal_naks_certification_data(self, permissions: PermissionDTO) -> None: 
+        if not permissions.personal_naks_certification_data_update:
+            raise AccessForbidden()
+        
+
+    def _add_personal_naks_certification_data(self, permissions: PermissionDTO) -> None: 
+        if not permissions.personal_naks_certification_data_create:
+            raise AccessForbidden()
+        
+
+    def _delete_personal_naks_certification_data(self, permissions: PermissionDTO) -> None: 
+        if not permissions.personal_naks_certification_data_delete:
+            raise AccessForbidden()
+
+
+    def _get_acst_data(self, permissions: PermissionDTO) -> None:  
+        if not permissions.acst_data_get:
+            raise AccessForbidden()
+        
+
+    def _update_acst_data(self, permissions: PermissionDTO) -> None: 
+        if not permissions.acst_data_update:
+            raise AccessForbidden()
+        
+
+    def _add_acst_data(self, permissions: PermissionDTO) -> None: 
+        if not permissions.acst_data_create:
+            raise AccessForbidden()
+        
+
+    def _delete_acst_data(self, permissions: PermissionDTO) -> None: 
+        if not permissions.acst_data_delete:
+            raise AccessForbidden()

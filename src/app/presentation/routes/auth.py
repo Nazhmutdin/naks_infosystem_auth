@@ -12,9 +12,8 @@ from app.application.interactors import (
     AuthenticateUserInteractor,
     UpdateUserTokensInteractor,
     LogoutUserInteractor,
-    ValidateDataAccessInteractor,
+    ValidateAccessInteractor,
     GetUserPermissionsInteractor,
-    ValidateFileAccessInteractor
 )
 from app.application.common.exc import PermissionDataNotFound
 from app.config import ApplicationConfig
@@ -89,26 +88,9 @@ async def logout(
     return response
 
 
-@auth_router.post("/validate-data-access")
+@auth_router.post("/validate-access")
 async def validate_data_access(
-    validate_access_action: FromDishka[ValidateDataAccessInteractor],
-    access_token: FromDishka[AccessTokenDTO],
-    request: Request
-) -> Response:
-    
-    await validate_access_action(
-        access_token=access_token, 
-        request=request
-    )
-    
-    response = Response()
-
-    return response
-
-
-@auth_router.post("/validate-file-access")
-async def validate_file_access(
-    validate_access_action: FromDishka[ValidateFileAccessInteractor],
+    validate_access_action: FromDishka[ValidateAccessInteractor],
     access_token: FromDishka[AccessTokenDTO],
     request: Request
 ) -> Response:

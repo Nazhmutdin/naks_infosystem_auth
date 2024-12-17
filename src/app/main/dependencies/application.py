@@ -15,18 +15,16 @@ from app.application.interactors import (
     AuthenticateUserInteractor, 
     UpdateUserTokensInteractor,
     LogoutUserInteractor,
-    ValidateDataAccessInteractor,
-    ValidateFileAccessInteractor,
+    ValidateAccessInteractor,
     GetUserPermissionsInteractor,
-    ValidateSuperUserAccessInteractor
 )
 from app.application.common.exc import (
-    CurrentUserNotFound,
     RefreshTokenCookieNotFound,
     AccessTokenCookieNotFound,
     RefreshTokenNotFound,
     InvalidRefreshToken,
-    InvalidAccessToken
+    InvalidAccessToken, 
+    UserNotFound
 )
 from app.infrastructure.services import PasswordHasher, JwtService
 from app.infrastructure.database.mappers import UserMapper, RefreshTokenMapper, PermissionMapper
@@ -108,7 +106,7 @@ class ApplicationProvider(Provider):
         if user:
             return user
         
-        raise CurrentUserNotFound(
+        raise UserNotFound(
             user_ident=refresh_token.user_ident,
             refresh_token=refresh_token.token
         )
@@ -260,21 +258,11 @@ class ApplicationProvider(Provider):
     
     
     @provide(scope=Scope.REQUEST)
-    async def provide_validate_data_access_interactor(
+    async def provide_validate_access_interactor(
         self,
         permission_gateway: PermissionGateway
-    ) -> ValidateDataAccessInteractor:
-        return ValidateDataAccessInteractor(
-            permission_gateway=permission_gateway
-        )
-    
-    
-    @provide(scope=Scope.REQUEST)
-    async def provide_validate_file_access_interactor(
-        self,
-        permission_gateway: PermissionGateway
-    ) -> ValidateFileAccessInteractor:
-        return ValidateFileAccessInteractor(
+    ) -> ValidateAccessInteractor:
+        return ValidateAccessInteractor(
             permission_gateway=permission_gateway
         )
     
@@ -285,15 +273,5 @@ class ApplicationProvider(Provider):
         permission_gateway: PermissionGateway
     ) -> GetUserPermissionsInteractor:
         return GetUserPermissionsInteractor(
-            permission_gateway=permission_gateway
-        )
-    
-    
-    @provide(scope=Scope.REQUEST)
-    async def provide_validate_superuser_access_interactor(
-        self,
-        permission_gateway: PermissionGateway
-    ) -> ValidateSuperUserAccessInteractor:
-        return ValidateSuperUserAccessInteractor(
             permission_gateway=permission_gateway
         )

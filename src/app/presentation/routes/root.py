@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 
 from app.application.common.exc import (
-    CurrentUserNotFound, 
     AccessForbidden, 
     UserNotFound, 
     RefreshTokenCookieNotFound, 
@@ -16,7 +15,6 @@ from app.application.common.exc import (
 from app.presentation.routes.user import user_router
 from app.presentation.routes.auth import auth_router
 from app.presentation.routes.exc_handler import (
-    current_user_not_found_handler,
     user_not_found_handler,
     access_forbidden_handler,
     refresh_token_cookie_not_found_handler,
@@ -31,7 +29,6 @@ from app.presentation.routes.exc_handler import (
 
 
 def register_routes(app: FastAPI):
-    app.add_exception_handler(CurrentUserNotFound, current_user_not_found_handler)
     app.add_exception_handler(AccessForbidden, access_forbidden_handler)
     app.add_exception_handler(UserNotFound, user_not_found_handler)
     app.add_exception_handler(RefreshTokenCookieNotFound, refresh_token_cookie_not_found_handler)

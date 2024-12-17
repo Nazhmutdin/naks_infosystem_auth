@@ -33,6 +33,10 @@ class TestAuthEndpoints:
 
         res = client.post(
             "v1/user",
+            headers={
+                "x-original-method": "POST",
+                "x-original-uri": "v1/user"
+            },
             json=loads(dumps(user, default=str, sort_keys=True))
         )
 
@@ -46,7 +50,11 @@ class TestAuthEndpoints:
     def test_get_user_forbidden(self, ident: UUID):
 
         res = client.get(
-            f"v1/user/{ident.hex}"
+            f"v1/user/{ident.hex}",
+            headers={
+                "x-original-method": "GET",
+                "x-original-uri": "v1/user"
+            }
         )
 
         assert res.status_code == 403
@@ -62,6 +70,10 @@ class TestAuthEndpoints:
 
         res = client.patch(
             f"v1/user/{ident}",
+            headers={
+                "x-original-method": "PATCH",
+                "x-original-uri": "v1/user"
+            },
             json=loads(dumps(data, default=str, sort_keys=True))
         )
 
@@ -75,7 +87,11 @@ class TestAuthEndpoints:
     def test_delete_user_forbidden(self, user: UserDTO):
 
         res = client.delete(
-            f"v1/user/{user.ident}"
+            f"v1/user/{user.ident}",
+            headers={
+                "x-original-method": "DELETE",
+                "x-original-uri": "v1/user"
+            }
         )
 
         assert res.status_code == 403
@@ -102,6 +118,10 @@ class TestAuthEndpoints:
 
         res = client.post(
             "v1/user",
+            headers={
+                "x-original-method": "POST",
+                "x-original-uri": "v1/user"
+            },
             json=loads(dumps(user, default=str, sort_keys=True))
         )
 
@@ -116,7 +136,11 @@ class TestAuthEndpoints:
     def test_get_user(self, ident: UUID):
 
         res = client.get(
-            f"v1/user/{ident.hex}"
+            f"v1/user/{ident.hex}",
+            headers={
+                "x-original-method": "GET",
+                "x-original-uri": "v1/user"
+            }
         )
 
         assert res.status_code == 200
@@ -132,6 +156,10 @@ class TestAuthEndpoints:
 
         res = client.patch(
             f"v1/user/{ident}",
+            headers={
+                "x-original-method": "PATCH",
+                "x-original-uri": "v1/user"
+            },
             json=loads(dumps(data, default=str, sort_keys=True))
         )
 
@@ -146,7 +174,11 @@ class TestAuthEndpoints:
     def test_delete_user(self, user: UserDTO):
 
         res = client.delete(
-            f"v1/user/{user.ident}"
+            f"v1/user/{user.ident}",
+            headers={
+                "x-original-method": "DELETE",
+                "x-original-uri": "v1/user"
+            }
         )
 
         assert res.status_code == 200
