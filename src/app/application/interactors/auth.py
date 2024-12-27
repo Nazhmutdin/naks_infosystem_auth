@@ -240,7 +240,12 @@ class ValidateAccessInteractor:
         original_uri = request.headers.get("x-original-uri").split("?")[0]
 
         permissions = await self.permission_gateway.get_by_user_ident(access_token.user_ident)
-    
+
+
+        if access_token.expired:
+            raise AccessTokenExpired
+
+
         if not permissions:
             raise PermissionDataNotFound(user_ident=access_token.user_ident)
 
@@ -255,11 +260,6 @@ class ValidateAccessInteractor:
 
         if not original_uri:
             raise OriginalUriNotFound
-
-
-        if access_token.expired:
-            raise AccessTokenExpired
-        
         
 
         self.func_map.get(f"{original_method}-{original_uri}", self.func_not_found_handler)(permissions)
