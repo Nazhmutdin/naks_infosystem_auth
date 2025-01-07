@@ -237,7 +237,7 @@ class ValidateAccessInteractor:
         }
 
     
-    async def __call__(self, access_token: AccessTokenDTO, request: Request) -> UserDTO:
+    async def __call__(self, access_token: AccessTokenDTO, request: Request) -> tuple[UserDTO, PermissionDTO]:
         original_method = request.headers.get("x-original-method")
         original_uri = request.headers.get("x-original-uri").split("?")[0]
 
@@ -258,7 +258,7 @@ class ValidateAccessInteractor:
 
 
         if permissions.is_super_user:
-            return
+            return user, permissions
 
 
         if not original_method:
@@ -268,11 +268,10 @@ class ValidateAccessInteractor:
         if not original_uri:
             raise OriginalUriNotFound
         
-
+        
         self.func_map.get(f"{original_method}-{original_uri}", self.func_not_found_handler)(permissions)
 
-
-        return user
+        return user, permissions
 
     
     def func_not_found_handler(self, permissions: PermissionDTO):

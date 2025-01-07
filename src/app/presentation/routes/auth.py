@@ -95,14 +95,17 @@ async def validate_data_access(
     request: Request
 ) -> Response:
     
-    user = await validate_access_action(
+    user, permissions = await validate_access_action(
         access_token=access_token, 
         request=request
     )
     
     response = Response()
 
-    response.headers["X-User-Projects"] = " | ".join(user.projects)
+    if permissions.is_super_user:
+        response.headers["X-User-Projects"] = "all"
+    elif user.projects:
+        response.headers["X-User-Projects"] = " | ".join(user.projects)
 
     return response
 
