@@ -197,9 +197,11 @@ class ValidateAccessInteractor:
 
     def __init__(
             self,
+            user_gateway: UserGateway,
             permission_gateway: PermissionGateway
     ):
-        self.permission_gateway=permission_gateway
+        self.user_gateway = user_gateway
+        self.permission_gateway = permission_gateway
 
         self.func_map: dict[t.Callable[[PermissionDTO], None]]={
             "GET-/v1/user": self._get_user_data,
@@ -235,15 +237,20 @@ class ValidateAccessInteractor:
         }
 
     
-    async def __call__(self, access_token: AccessTokenDTO, request: Request):
+    async def __call__(self, access_token: AccessTokenDTO, request: Request) -> UserDTO:
         original_method = request.headers.get("x-original-method")
         original_uri = request.headers.get("x-original-uri").split("?")[0]
 
+        user = await self.user_gateway.get(access_token.user_ident)
         permissions = await self.permission_gateway.get_by_user_ident(access_token.user_ident)
 
 
         if access_token.expired:
             raise AccessTokenExpired
+
+
+        if not user:
+            raise UserNotFound(ident=access_token.user_ident)
 
 
         if not permissions:
@@ -263,6 +270,9 @@ class ValidateAccessInteractor:
         
 
         self.func_map.get(f"{original_method}-{original_uri}", self.func_not_found_handler)(permissions)
+
+
+        return user
 
     
     def func_not_found_handler(self, permissions: PermissionDTO):

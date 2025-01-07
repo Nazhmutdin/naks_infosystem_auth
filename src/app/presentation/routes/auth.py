@@ -95,12 +95,14 @@ async def validate_data_access(
     request: Request
 ) -> Response:
     
-    await validate_access_action(
+    user = await validate_access_action(
         access_token=access_token, 
         request=request
     )
     
     response = Response()
+
+    response.headers["X-User-Projects"] = " | ".join(user.projects)
 
     return response
 

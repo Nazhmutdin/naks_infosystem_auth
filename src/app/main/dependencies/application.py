@@ -260,9 +260,11 @@ class ApplicationProvider(Provider):
     @provide(scope=Scope.REQUEST)
     async def provide_validate_access_interactor(
         self,
+        user_gateway: UserGateway,
         permission_gateway: PermissionGateway
     ) -> ValidateAccessInteractor:
         return ValidateAccessInteractor(
+            user_gateway=user_gateway,
             permission_gateway=permission_gateway
         )
     
