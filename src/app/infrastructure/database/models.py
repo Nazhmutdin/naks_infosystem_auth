@@ -25,12 +25,15 @@ class UserModel(Base):
     login: Mapped[str] = sa.Column(sa.String(), unique=True, nullable=False)
     hashed_password: Mapped[str] = sa.Column(sa.String(), nullable=False)
     email: Mapped[str | None] = sa.Column(sa.String(), nullable=True)
+    project: Mapped[list[str] | None] = sa.Column(sa.ARRAY(sa.String), nullable=True)
     sign_dt: Mapped[datetime] = sa.Column(sa.DateTime(), nullable=False)
     update_dt: Mapped[datetime] = sa.Column(sa.DateTime(), nullable=False)
     login_dt: Mapped[datetime] = sa.Column(sa.DateTime(), nullable=False)
 
     __table_args__ = (
         Index("user_ident_idx", ident),
+        Index("user_login_idx", login),
+        Index("user_project_idx", project)
     )
 
 
@@ -46,8 +49,9 @@ class RefreshTokenModel(Base):
 
     __table_args__ = (
         Index("refresh_token_ident_idx", ident),
+        Index("refresh_token_user_ident_idx", user_ident),
         Index("token_idx", token),
-        Index("revoked_idx", revoked),
+        Index("revoked_idx", revoked)
     )
 
 
@@ -87,3 +91,9 @@ class PermissionModel(Base):
 
     personal_naks_protocol_file_download: Mapped[bool] = sa.Column(sa.Boolean(), nullable=False, default=False)
     personal_naks_protocol_file_upload: Mapped[bool] = sa.Column(sa.Boolean(), nullable=False, default=False)
+
+
+    __table_args__ = (
+        Index("permission_ident_idx", ident),
+        Index("permission_user_ident_idx", user_ident)
+    )

@@ -15,6 +15,7 @@ class CreateUserShema(BaseShema):
     name: str
     login: str
     email: EmailStr | None = Field(default=None)
+    project: list[str] | None
     password: str
     sign_dt: t.Annotated[datetime, before_datetime_validator] = Field(default_factory=datetime.now)
     update_dt: t.Annotated[datetime, before_datetime_validator] = Field(default_factory=datetime.now)
@@ -28,6 +29,7 @@ class CreateUserShema(BaseShema):
             login=self.login,
             name=self.name,
             email=self.email,
+            project=self.project,
             hashed_password=PasswordHasher().hash(self.password),
             sign_dt=self.sign_dt,
             update_dt=self.update_dt,
@@ -40,6 +42,7 @@ class UserWithouPasswordShema(BaseShema):
     ident: UUID = Field(default_factory=uuid4)
     name: str
     email: EmailStr | None = Field(default=None)
+    project: list[str] | None
     sign_dt: t.Annotated[datetime, before_datetime_validator, plain_datetime_serializer] = Field(default_factory=datetime.now)
     update_dt: t.Annotated[datetime, before_datetime_validator, plain_datetime_serializer] = Field(default_factory=datetime.now)
     login_dt: t.Annotated[datetime, before_datetime_validator, plain_datetime_serializer] = Field(default_factory=datetime.now)
@@ -50,6 +53,7 @@ class UpdateUserShema(BaseShema):
     name: str | None = Field(default=None) 
     login: str | None = Field(default=None)
     email: EmailStr | None = Field(default=None)
+    project: list[str] | None
     password: str | None = Field(default=None)
     sign_dt: t.Annotated[datetime | None, before_optional_datetime_validator] = Field(default=None)
     update_dt: t.Annotated[datetime | None, before_optional_datetime_validator] = Field(default=None)
@@ -62,6 +66,7 @@ class UpdateUserShema(BaseShema):
             login=self.login,
             name=self.name,
             email=self.email,
+            project=self.project,
             hashed_password=PasswordHasher().hash(self.password),
             sign_dt=self.sign_dt,
             update_dt=self.update_dt,

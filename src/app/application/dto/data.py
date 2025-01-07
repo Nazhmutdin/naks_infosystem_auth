@@ -14,10 +14,11 @@ class UserDTO:
     login: str
     name: str
     email: EmailStr | None
+    project: list[str] | None
     hashed_password: str
-    sign_dt: Annotated[datetime, plain_datetime_serializer] 
-    update_dt: Annotated[datetime, plain_datetime_serializer] 
-    login_dt: Annotated[datetime, plain_datetime_serializer] 
+    sign_dt: Annotated[datetime, plain_datetime_serializer]
+    update_dt: Annotated[datetime, plain_datetime_serializer]
+    login_dt: Annotated[datetime, plain_datetime_serializer]
 
 
 @dataclass(config=ConfigDict(alias_generator=camel_case_alias_generator, populate_by_name=True))
@@ -29,6 +30,7 @@ class UpdateUserDTO:
     name: str | None
     login: str | None
     email: EmailStr | None
+    project: list[str] | None
     sign_dt: datetime | None
     update_dt: datetime | None
     login_dt: datetime | None

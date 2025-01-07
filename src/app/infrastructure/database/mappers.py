@@ -37,6 +37,7 @@ class UserMapper(SqlAlchemyCrudMapper[UserDTO, CreateUserDTO, UpdateUserDTO]):
             login=row.login,
             name=row.name,
             email=row.email,
+            project=row.project,
             hashed_password=row.hashed_password,
             sign_dt=row.sign_dt,
             update_dt=row.update_dt,
