@@ -32,7 +32,7 @@ class FakeUserDataGenerator(IFakeDataGenerator):
             sub_data["password"] = "QWE123df"
             sub_data["hashed_password"] = self.hasher.hash(sub_data["password"])
             sub_data["email"] = self.faker.email()
-            sub_data["project"] = [self.faker.random_element(PROJECTS)]
+            sub_data["projects"] = [self.faker.random_element(PROJECTS)]
             sub_data["sign_dt"] = self.faker.date_time()
             sub_data["update_dt"] = self.faker.date_time()
             sub_data["login_dt"] = self.faker.date_time()

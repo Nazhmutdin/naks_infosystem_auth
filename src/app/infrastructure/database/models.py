@@ -25,7 +25,7 @@ class UserModel(Base):
     login: Mapped[str] = sa.Column(sa.String(), unique=True, nullable=False)
     hashed_password: Mapped[str] = sa.Column(sa.String(), nullable=False)
     email: Mapped[str | None] = sa.Column(sa.String(), nullable=True)
-    project: Mapped[list[str] | None] = sa.Column(sa.ARRAY(sa.String), nullable=True)
+    projects: Mapped[list[str] | None] = sa.Column(sa.ARRAY(sa.String), nullable=True)
     sign_dt: Mapped[datetime] = sa.Column(sa.DateTime(), nullable=False)
     update_dt: Mapped[datetime] = sa.Column(sa.DateTime(), nullable=False)
     login_dt: Mapped[datetime] = sa.Column(sa.DateTime(), nullable=False)
@@ -33,7 +33,7 @@ class UserModel(Base):
     __table_args__ = (
         Index("user_ident_idx", ident),
         Index("user_login_idx", login),
-        Index("user_project_idx", project)
+        Index("user_projects_idx", projects)
     )
 
 
