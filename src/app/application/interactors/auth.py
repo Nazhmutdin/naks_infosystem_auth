@@ -1,11 +1,11 @@
 import typing as t
-from uuid import uuid4
+from uuid import UUID, uuid4
 from datetime import timedelta, datetime
 
 from naks_library.interfaces import ICommitter
 from fastapi import Request
 
-from app.application.interfaces.gateways import UserGateway, RefreshTokenGateway, PermissionGateway
+from app.application.interfaces.gateways import UserGateway, RefreshTokenGateway, PermissionGateway, RedisGateway
 from app.application.common.exc import (
     UserNotFound, 
     InvalidPassword, 
@@ -198,67 +198,72 @@ class ValidateAccessInteractor:
     def __init__(
             self,
             user_gateway: UserGateway,
-            permission_gateway: PermissionGateway
+            permission_gateway: PermissionGateway,
+            redis_gateway: RedisGateway
     ):
         self.user_gateway = user_gateway
         self.permission_gateway = permission_gateway
+        self.redis_gateway = redis_gateway
 
         self.func_map: dict[t.Callable[[PermissionDTO], None]]={
-            "GET-/v1/user": self._get_user_data,
-            "PATCH-/v1/user": self._update_user_data,
-            "POST-/v1/user": self._add_user_data,
-            "DELETE-/v1/user": self._delete_user_data,
+            "GET-/v1/user": "is_super_user",
+            "PATCH-/v1/user": "is_super_user",
+            "POST-/v1/user": "is_super_user",
+            "DELETE-/v1/user": "is_super_user",
 
-            "GET-/v1/personal": self._get_personal_data,
-            "GET-/v1/personal/select": self._get_personal_data,
-            "PATCH-/v1/personal": self._update_personal_data,
-            "POST-/v1/personal": self._add_personal_data,
-            "DELETE-/v1/personal": self._delete_personal_data,
+            "GET-/v1/personal": "personal_data_get",
+            "GET-/v1/personal/select": "personal_data_get",
+            "PATCH-/v1/personal": "personal_data_update",
+            "POST-/v1/personal": "personal_data_create",
+            "DELETE-/v1/personal": "personal_data_delete",
 
-            "GET-/v1/ndt": self._get_ndt_data,
-            "GET-/v1/ndt/select": self._get_ndt_data,
-            "GET-/v1/ndt/personal": self._get_ndt_data,
-            "PATCH-/v1/ndt": self._update_ndt_data,
-            "POST-/v1/ndt": self._add_ndt_data,
-            "DELETE-/v1/ndt": self._delete_ndt_data,
+            "GET-/v1/ndt": "ndt_data_get",
+            "GET-/v1/ndt/select": "ndt_data_get",
+            "GET-/v1/ndt/personal": "ndt_data_get",
+            "PATCH-/v1/ndt": "ndt_data_update",
+            "POST-/v1/ndt": "ndt_data_create",
+            "DELETE-/v1/ndt": "ndt_data_delete",
 
-            "GET-/v1/personal-naks-certification": self._get_personal_naks_certification_data,
-            "GET-/v1/personal-naks-certification/select": self._get_personal_naks_certification_data,
-            "GET-/v1/personal-naks-certification/personal": self._get_personal_naks_certification_data,
-            "PATCH-/v1/personal-naks-certification": self._update_personal_naks_certification_data,
-            "POST-/v1/personal-naks-certification": self._add_personal_naks_certification_data,
-            "DELETE-/v1/personal-naks-certification": self._delete_personal_naks_certification_data,
+            "GET-/v1/personal-naks-certification": "personal_naks_certification_data_get",
+            "GET-/v1/personal-naks-certification/select": "personal_naks_certification_data_get",
+            "GET-/v1/personal-naks-certification/personal": "personal_naks_certification_data_get",
+            "PATCH-/v1/personal-naks-certification": "personal_naks_certification_data_update",
+            "POST-/v1/personal-naks-certification": "personal_naks_certification_data_create",
+            "DELETE-/v1/personal-naks-certification": "personal_naks_certification_data_delete",
 
-            "GET-/v1/acst": self._get_acst_data,
-            "GET-/v1/acst/select": self._get_acst_data,
-            "PATCH-/v1/acst": self._update_acst_data,
-            "POST-/v1/acst": self._add_acst_data,
-            "DELETE-/v1/acst": self._delete_acst_data
+            "GET-/v1/acst": "acst_data_get",
+            "GET-/v1/acst/select": "acst_data_get",
+            "PATCH-/v1/acst": "acst_data_update",
+            "POST-/v1/acst": "acst_data_create",
+            "DELETE-/v1/acst": "acst_data_delete"
         }
 
     
     async def __call__(self, access_token: AccessTokenDTO, request: Request) -> tuple[UserDTO, PermissionDTO]:
-        original_method = request.headers.get("x-original-method")
-        original_uri = request.headers.get("x-original-uri").split("?")[0]
-
-        user = await self.user_gateway.get(access_token.user_ident)
-        permissions = await self.permission_gateway.get_by_user_ident(access_token.user_ident)
-
-
+            
         if access_token.expired:
             raise AccessTokenExpired
-
-
-        if not user:
-            raise UserNotFound(ident=access_token.user_ident)
-
+        
+        user = await self._get_user(access_token.user_ident)
+        permissions = await self._get_permissions(access_token.user_ident)
 
         if not permissions:
             raise PermissionDataNotFound(user_ident=access_token.user_ident)
 
+        if not user:
+            raise UserNotFound(ident=access_token.user_ident)
+    
+
+        await self.redis_gateway.set_permission(access_token.user_ident, permissions)
+        await self.redis_gateway.set_user(access_token.user_ident, user)
+
 
         if permissions.is_super_user:
             return user, permissions
+
+        
+        original_method = request.headers.get("x-original-method")
+        original_uri = request.headers.get("x-original-uri").split("?")[0]
 
 
         if not original_method:
@@ -269,110 +274,30 @@ class ValidateAccessInteractor:
             raise OriginalUriNotFound
         
         
-        self.func_map.get(f"{original_method}-{original_uri}", self.func_not_found_handler)(permissions)
+        access_key: str | None = self.func_map.get(f"{original_method}-{original_uri}", None)
+
+        if not getattr(permissions, access_key):
+            raise AccessForbidden()
 
         return user, permissions
-
     
-    def func_not_found_handler(self, permissions: PermissionDTO):
-        raise AccessForbidden()
 
+    async def _get_user(self, user_ident: UUID) -> UserDTO | None:
 
-    def _get_user_data(self, permissions: PermissionDTO) -> None:
-        if not permissions.is_super_user:
-            raise AccessForbidden()
-        
+        user = await self.redis_gateway.get_user(user_ident)
 
-    def _update_user_data(self, permissions: PermissionDTO) -> None:
-        if not permissions.is_super_user:
-            raise AccessForbidden()
+        if not user:
+            user = await self.user_gateway.get(user_ident)
+    
+        return user
+    
 
+    async def _get_permissions(self, user_ident: UUID) -> PermissionDTO | None:
 
-    def _add_user_data(self, permissions: PermissionDTO) -> None:
-        if not permissions.is_super_user:
-            raise AccessForbidden()
+        permissions = await self.redis_gateway.get_permission(user_ident)
 
+        if not permissions:
+            permissions = await self.permission_gateway.get_by_user_ident(user_ident)
+    
+        return permissions
 
-    def _delete_user_data(self, permissions: PermissionDTO) -> None:
-        if not permissions.is_super_user:
-            raise AccessForbidden()
-
-
-    def _get_personal_data(self, permissions: PermissionDTO) -> None:
-        if not permissions.personal_data_get:
-            raise AccessForbidden()
-        
-
-    def _update_personal_data(self, permissions: PermissionDTO) -> None:
-        if not permissions.personal_data_update:
-            raise AccessForbidden()
-
-
-    def _add_personal_data(self, permissions: PermissionDTO) -> None:
-        if not permissions.personal_data_create:
-            raise AccessForbidden()
-
-
-    def _delete_personal_data(self, permissions: PermissionDTO) -> None:
-        if not permissions.personal_data_delete:
-            raise AccessForbidden()
-
-
-    def _get_ndt_data(self, permissions: PermissionDTO) -> None:
-        if not permissions.ndt_data_get:
-            raise AccessForbidden()
-
-
-    def _update_ndt_data(self, permissions: PermissionDTO) -> None:
-        if not permissions.ndt_data_update:
-            raise AccessForbidden()
-
-
-    def _add_ndt_data(self, permissions: PermissionDTO) -> None: 
-        if not permissions.ndt_data_create:
-            raise AccessForbidden()
-
-
-    def _delete_ndt_data(self, permissions: PermissionDTO) -> None: 
-        if not permissions.ndt_data_delete:
-            raise AccessForbidden()
-
-
-    def _get_personal_naks_certification_data(self, permissions: PermissionDTO) -> None:  
-        if not permissions.personal_naks_certification_data_get:
-            raise AccessForbidden()
-        
-
-    def _update_personal_naks_certification_data(self, permissions: PermissionDTO) -> None: 
-        if not permissions.personal_naks_certification_data_update:
-            raise AccessForbidden()
-        
-
-    def _add_personal_naks_certification_data(self, permissions: PermissionDTO) -> None: 
-        if not permissions.personal_naks_certification_data_create:
-            raise AccessForbidden()
-        
-
-    def _delete_personal_naks_certification_data(self, permissions: PermissionDTO) -> None: 
-        if not permissions.personal_naks_certification_data_delete:
-            raise AccessForbidden()
-
-
-    def _get_acst_data(self, permissions: PermissionDTO) -> None:  
-        if not permissions.acst_data_get:
-            raise AccessForbidden()
-        
-
-    def _update_acst_data(self, permissions: PermissionDTO) -> None: 
-        if not permissions.acst_data_update:
-            raise AccessForbidden()
-        
-
-    def _add_acst_data(self, permissions: PermissionDTO) -> None: 
-        if not permissions.acst_data_create:
-            raise AccessForbidden()
-        
-
-    def _delete_acst_data(self, permissions: PermissionDTO) -> None: 
-        if not permissions.acst_data_delete:
-            raise AccessForbidden()
