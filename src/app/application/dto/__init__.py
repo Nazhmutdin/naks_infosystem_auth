@@ -1,7 +1,6 @@
 from app.application.dto.data import (
     UserDTO, 
     CreateUserDTO, 
-    UpdateUserDTO, 
     CurrentUser, 
     RefreshTokenDTO, 
     CreateRefreshTokenDTO, 

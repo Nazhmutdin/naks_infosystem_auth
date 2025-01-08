@@ -70,12 +70,12 @@ class LoginUserInteractor:
         self,
         user_gateway: UserGateway,
         refresh_token_gateway: RefreshTokenGateway,
-        commiter: ICommitter,
+        committer: ICommitter,
         jwt_service: JwtService
     ) -> None:
         self.user_gateway = user_gateway
         self.refresh_token_gateway = refresh_token_gateway
-        self.commiter = commiter
+        self.committer = committer
         self.jwt_service = jwt_service
         
 
@@ -97,7 +97,7 @@ class LoginUserInteractor:
 
         await self.refresh_token_gateway.insert(convert_refresh_token_dto_to_create_refresh_token_dto(refresh_token))
 
-        await self.commiter.commit()
+        await self.committer.commit()
 
         return (refresh_token, access_token)
 
@@ -107,12 +107,12 @@ class AuthenticateUserInteractor:
         self,
         user_gateway: UserGateway,
         refresh_token_gateway: RefreshTokenGateway,
-        commiter: ICommitter,
+        committer: ICommitter,
         jwt_service: JwtService
     ) -> None:
         self.user_gateway = user_gateway
         self.refresh_token_gateway = refresh_token_gateway
-        self.commiter = commiter
+        self.committer = committer
         self.jwt_service = jwt_service
 
     
@@ -135,7 +135,7 @@ class AuthenticateUserInteractor:
 
             raise RefreshTokenRevoked
 
-        await self.commiter.commit()
+        await self.committer.commit()
 
         return gen_new_access_token(user, self.jwt_service)
         
@@ -145,12 +145,12 @@ class UpdateUserTokensInteractor:
         self,
         user_gateway: UserGateway,
         refresh_token_gateway: RefreshTokenGateway,
-        commiter: ICommitter,
+        committer: ICommitter,
         jwt_service: JwtService
     ) -> None:
         self.user_gateway = user_gateway
         self.refresh_token_gateway = refresh_token_gateway
-        self.commiter = commiter
+        self.committer = committer
         self.jwt_service = jwt_service
 
     
@@ -172,7 +172,7 @@ class UpdateUserTokensInteractor:
 
         await self.refresh_token_gateway.insert(convert_refresh_token_dto_to_create_refresh_token_dto(refresh_token))
 
-        await self.commiter.commit()
+        await self.committer.commit()
 
         return (refresh_token, access_token)
 
@@ -181,16 +181,16 @@ class LogoutUserInteractor:
     def __init__(
         self,
         refresh_token_gateway: RefreshTokenGateway,
-        commiter: ICommitter
+        committer: ICommitter
     ) -> None:
         self.refresh_token_gateway = refresh_token_gateway
-        self.commiter = commiter
+        self.committer = committer
 
     
     async def __call__(self, refresh_token: RefreshTokenDTO):
         await self.refresh_token_gateway.revoke_all_user_tokens(refresh_token.user_ident)
 
-        await self.commiter.commit()
+        await self.committer.commit()
 
 
 class ValidateAccessInteractor:

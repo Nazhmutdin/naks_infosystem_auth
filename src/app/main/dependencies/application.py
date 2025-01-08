@@ -1,5 +1,5 @@
 from dishka import Provider, Scope, provide, from_context
-from naks_library.commiter import SqlAlchemyCommitter
+from naks_library.committer import SqlAlchemyCommitter
 from jose.exceptions import JWTError, JWTClaimsError
 from fastapi import Request
 
@@ -156,7 +156,7 @@ class ApplicationProvider(Provider):
 
         return CreateUserInteractor(
             gateway=user_gateway,
-            commiter=committer
+            committer=committer
         )
 
 
@@ -180,7 +180,7 @@ class ApplicationProvider(Provider):
 
         return UpdateUserInteractor(
             gateway=user_gateway,
-            commiter=committer
+            committer=committer
         )
 
 
@@ -193,7 +193,7 @@ class ApplicationProvider(Provider):
 
         return DeleteUserInteractor(
             gateway=user_gateway,
-            commiter=committer
+            committer=committer
         )
 
 
@@ -219,7 +219,7 @@ class ApplicationProvider(Provider):
         return LoginUserInteractor(
             user_gateway=user_gateway,
             refresh_token_gateway=refresh_token_gateway,
-            commiter=committer,
+            committer=committer,
             jwt_service=jwt_service
         )
     
@@ -235,7 +235,7 @@ class ApplicationProvider(Provider):
         return AuthenticateUserInteractor(
             user_gateway=user_gateway,
             refresh_token_gateway=refresh_token_gateway,
-            commiter=committer,
+            committer=committer,
             jwt_service=jwt_service
         )
     
@@ -251,7 +251,7 @@ class ApplicationProvider(Provider):
         return UpdateUserTokensInteractor(
             user_gateway=user_gateway,
             refresh_token_gateway=refresh_token_gateway,
-            commiter=committer,
+            committer=committer,
             jwt_service=jwt_service
         )
     
@@ -264,7 +264,7 @@ class ApplicationProvider(Provider):
     ) -> LogoutUserInteractor:
         return LogoutUserInteractor(
             refresh_token_gateway=refresh_token_gateway,
-            commiter=committer
+            committer=committer
         )
     
     

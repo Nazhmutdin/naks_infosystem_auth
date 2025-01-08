@@ -2,7 +2,7 @@ from asyncio import run
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
-from naks_library.commiter import SqlAlchemyCommitter
+from naks_library.committer import SqlAlchemyCommitter
 
 from app.infrastructure.database.mappers import UserMapper, RefreshTokenMapper, PermissionMapper
 

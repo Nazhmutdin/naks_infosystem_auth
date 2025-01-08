@@ -25,17 +25,6 @@ class UserDTO:
 class CreateUserDTO(UserDTO): ...
 
 
-@dataclass(config=ConfigDict(alias_generator=camel_case_alias_generator, populate_by_name=True))
-class UpdateUserDTO:
-    name: str | None
-    login: str | None
-    email: EmailStr | None
-    projects: list[str] | None
-    sign_dt: datetime | None
-    update_dt: datetime | None
-    login_dt: datetime | None
-
-
 type CurrentUser = UserDTO
 
 

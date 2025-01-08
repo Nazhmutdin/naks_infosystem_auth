@@ -2,7 +2,7 @@ from typing import AsyncIterator
 
 from dishka import Provider, Scope, provide
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
-from naks_library.commiter import SqlAlchemyCommitter
+from naks_library.committer import SqlAlchemyCommitter
 
 import redis.asyncio as redis
 

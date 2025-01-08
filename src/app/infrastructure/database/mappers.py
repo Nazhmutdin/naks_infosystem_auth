@@ -6,18 +6,15 @@ from sqlalchemy import update, select
 from app.application.dto import (
     UserDTO, 
     CreateUserDTO, 
-    UpdateUserDTO,
     RefreshTokenDTO,
     CreateRefreshTokenDTO,
-    UpdateRefreshTokenDTO,
     PermissionDTO,
-    CreatePermissionDTO,
-    UpdatePermissionDTO
+    CreatePermissionDTO
 )
 from app.infrastructure.database.models import UserModel, RefreshTokenModel, PermissionModel
 
 
-class UserMapper(SqlAlchemyCrudMapper[UserDTO, CreateUserDTO, UpdateUserDTO]):
+class UserMapper(SqlAlchemyCrudMapper[UserDTO, CreateUserDTO]):
     __model__ = UserModel
 
     async def get_by_login(self, login: str) -> UserDTO | None:
@@ -45,7 +42,7 @@ class UserMapper(SqlAlchemyCrudMapper[UserDTO, CreateUserDTO, UpdateUserDTO]):
         )
 
 
-class RefreshTokenMapper(SqlAlchemyCrudMapper[RefreshTokenDTO, CreateRefreshTokenDTO, UpdateRefreshTokenDTO]):
+class RefreshTokenMapper(SqlAlchemyCrudMapper[RefreshTokenDTO, CreateRefreshTokenDTO]):
     __model__ = RefreshTokenModel
 
 
@@ -63,7 +60,7 @@ class RefreshTokenMapper(SqlAlchemyCrudMapper[RefreshTokenDTO, CreateRefreshToke
         return RefreshTokenDTO(**row.__dict__)
 
 
-class PermissionMapper(SqlAlchemyCrudMapper[PermissionDTO, CreatePermissionDTO, UpdatePermissionDTO]):
+class PermissionMapper(SqlAlchemyCrudMapper[PermissionDTO, CreatePermissionDTO]):
     __model__ = PermissionModel
 
 

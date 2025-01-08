@@ -3,7 +3,7 @@ import json
 import asyncio
 
 import click
-from naks_library.commiter import SqlAlchemyCommitter
+from naks_library.committer import SqlAlchemyCommitter
 
 from app.application.dto import CreatePermissionDTO, CreateUserDTO
 from app.infrastructure.database.setup import create_engine, create_session_maker

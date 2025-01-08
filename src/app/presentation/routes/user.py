@@ -74,7 +74,7 @@ async def update_user(
     
     await validate_access(access_token, request)
     
-    await update_user(ident, data.to_dto())
+    await update_user(ident, data.model_dump(exclude_unset=True))
 
     return Response(
         f"user {ident} successfully updated"
