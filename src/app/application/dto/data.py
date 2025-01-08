@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic.dataclasses import dataclass
 from pydantic import ConfigDict, EmailStr
-from naks_library.utils.validators import plain_datetime_serializer
+from naks_library.utils.validators import plain_datetime_serializer, before_datetime_validator
 from naks_library.common.root import camel_case_alias_generator
 
 
@@ -16,9 +16,9 @@ class UserDTO:
     email: EmailStr | None
     projects: list[str] | None
     hashed_password: str
-    sign_dt: Annotated[datetime, plain_datetime_serializer]
-    update_dt: Annotated[datetime, plain_datetime_serializer]
-    login_dt: Annotated[datetime, plain_datetime_serializer]
+    sign_dt: Annotated[datetime, before_datetime_validator, plain_datetime_serializer]
+    update_dt: Annotated[datetime, before_datetime_validator, plain_datetime_serializer]
+    login_dt: Annotated[datetime, before_datetime_validator, plain_datetime_serializer]
 
 
 @dataclass(config=ConfigDict(alias_generator=camel_case_alias_generator, populate_by_name=True))

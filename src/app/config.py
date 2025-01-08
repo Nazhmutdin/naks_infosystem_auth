@@ -11,6 +11,11 @@ if not os.getenv("MODE"):
 class DBConfig:
 
     @classmethod
+    def USER(cls) -> str:
+        return os.getenv("USER")
+
+
+    @classmethod
     def DB_NAME(cls) -> str:
         return os.getenv("DATABASE_NAME")
     
@@ -22,17 +27,12 @@ class DBConfig:
 
     @classmethod
     def DB_HOST(cls) -> str:
-        return os.getenv("HOST")
-    
-
-    @classmethod
-    def USER(cls) -> str:
-        return os.getenv("USER")
+        return os.getenv("DB_HOST")
     
 
     @classmethod
     def DB_PORT(cls) -> str:
-        return os.getenv("PORT")
+        return os.getenv("DB_PORT")
     
 
     @classmethod
@@ -42,6 +42,49 @@ class DBConfig:
             cls.DB_PASSWORD(), 
             cls.DB_HOST(), 
             cls.DB_PORT(), 
+            cls.DB_NAME()
+        )
+
+
+class RedisConfig:
+
+    @classmethod
+    def REDIS_HOST(cls) -> str:
+        return os.getenv("REDIS_HOST")
+
+
+    @classmethod
+    def REDIS_PORT(cls) -> str:
+        return os.getenv("REDIS_PORT")
+    
+    
+    @classmethod
+    def REDIS_PASSWORD(cls) -> str:
+        return os.getenv("REDIS_PASSWORD")
+    
+
+    @classmethod
+    def USER(cls) -> str:
+        return "default"
+    
+
+    @classmethod
+    def DB_NAME(cls) -> str:
+        return 1
+    
+
+    @classmethod
+    def CACHE_EXP(cls) -> int:
+        return os.getenv("CACHE_EXP", 900)
+    
+
+    @classmethod
+    def REDIS_URL(cls) -> str:
+        return "redis://{0}:{1}@{2}:{3}/{4}".format(
+            cls.USER(), 
+            cls.REDIS_PASSWORD(), 
+            cls.REDIS_HOST(), 
+            cls.REDIS_PORT(), 
             cls.DB_NAME()
         )
 

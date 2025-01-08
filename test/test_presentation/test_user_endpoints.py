@@ -2,9 +2,11 @@ import pytest
 from json import dumps, loads
 from uuid import UUID
 
-from client import client
+from httpx import AsyncClient
+
 from storage import storage
 from app.application.dto import UserDTO
+
 
 @pytest.mark.usefixtures("prepare_db")
 @pytest.mark.usefixtures("add_refresh_tokens")
@@ -16,13 +18,14 @@ class TestUserEndpoints:
         "user",
         storage.fake_user_generator.generate_test_data(1)
     )
-    def test_create_user_forbidden(self, user: dict):
+    @pytest.mark.anyio
+    async def test_create_user_forbidden(self, user: dict, client: AsyncClient):
 
         refresh_token = storage.get_actual_usual_user_refresh_token()
 
         client.cookies["refresh_token"] = refresh_token.token
 
-        res = client.post(
+        res = await client.post(
             "auth/v1/authenticate"
         )
 
@@ -31,11 +34,11 @@ class TestUserEndpoints:
         del user["ident"]
         del user["hashed_password"]
 
-        res = client.post(
-            "v1/user",
+        res = await client.post(
+            "v1/user/",
             headers={
                 "x-original-method": "POST",
-                "x-original-uri": "v1/user"
+                "x-original-uri": "/v1/user"
             },
             json=loads(dumps(user, default=str, sort_keys=True))
         )
@@ -47,16 +50,17 @@ class TestUserEndpoints:
         "ident",
         [user.ident for user in storage.fake_users]
     )
-    def test_get_user_forbidden(self, ident: UUID):
+    @pytest.mark.anyio
+    async def test_get_user_forbidden(self, ident: UUID, client: AsyncClient):
 
-        res = client.get(
+        res = await client.get(
             "v1/user/",
             params={
                 "ident": ident
             },
             headers={
                 "x-original-method": "GET",
-                "x-original-uri": "v1/user"
+                "x-original-uri": "/v1/user"
             }
         )
 
@@ -67,18 +71,19 @@ class TestUserEndpoints:
         "ident, data",
         [(user.ident, new_user_data) for user, new_user_data in zip(storage.fake_users[:5], storage.fake_user_generator.generate_test_data(5))]
     )
-    def test_update_user_forbidden(self, ident: UUID, data: dict):
+    @pytest.mark.anyio
+    async def test_update_user_forbidden(self, ident: UUID, data: dict, client: AsyncClient):
 
         del data["ident"]
 
-        res = client.patch(
+        res = await client.patch(
             "v1/user/",
             params={
                 "ident": ident
             },
             headers={
                 "x-original-method": "PATCH",
-                "x-original-uri": "v1/user"
+                "x-original-uri": "/v1/user"
             },
             json=loads(dumps(data, default=str, sort_keys=True))
         )
@@ -90,16 +95,17 @@ class TestUserEndpoints:
         "user",
         storage.fake_users[1:]
     )
-    def test_delete_user_forbidden(self, user: UserDTO):
+    @pytest.mark.anyio
+    async def test_delete_user_forbidden(self, user: UserDTO, client: AsyncClient):
 
-        res = client.delete(
+        res = await client.delete(
             "v1/user/",
             params={
                 "ident": user.ident
             },
             headers={
                 "x-original-method": "DELETE",
-                "x-original-uri": "v1/user"
+                "x-original-uri": "/v1/user"
             }
         )
 
@@ -110,13 +116,14 @@ class TestUserEndpoints:
         "user",
         storage.fake_user_generator.generate_test_data(5)
     )
-    def test_create_user(self, user: dict):
+    @pytest.mark.anyio
+    async def test_create_user(self, user: dict, client: AsyncClient):
 
         superuser_refresh_token = storage.get_actual_superuser_refresh_token()
 
         client.cookies["refresh_token"] = superuser_refresh_token.token
 
-        res = client.post(
+        res = await client.post(
             "auth/v1/authenticate"
         )
 
@@ -125,8 +132,8 @@ class TestUserEndpoints:
         del user["ident"]
         del user["hashed_password"]
 
-        res = client.post(
-            "v1/user",
+        res = await client.post(
+            "v1/user/",
             headers={
                 "x-original-method": "POST",
                 "x-original-uri": "v1/user"
@@ -142,9 +149,10 @@ class TestUserEndpoints:
         "ident",
         [user.ident for user in storage.fake_users]
     )
-    def test_get_user(self, ident: UUID):
+    @pytest.mark.anyio
+    async def test_get_user(self, ident: UUID, client: AsyncClient):
 
-        res = client.get(
+        res = await client.get(
             "v1/user/",
             params={
                 "ident": ident
@@ -162,12 +170,13 @@ class TestUserEndpoints:
         "ident, data",
         [(user.ident, new_user_data) for user, new_user_data in zip(storage.fake_users[:5], storage.fake_user_generator.generate_test_data(5))]
     )
-    def test_update_user(self, ident: UUID, data: dict):
+    @pytest.mark.anyio
+    async def test_update_user(self, ident: UUID, data: dict, client: AsyncClient):
 
         del data["ident"]
 
-        res = client.patch(
-            "v1/user",
+        res = await client.patch(
+            "v1/user/",
             params={
                 "ident": ident
             },
@@ -186,10 +195,11 @@ class TestUserEndpoints:
         "user",
         storage.fake_users[1:]
     )
-    def test_delete_user(self, user: UserDTO):
+    @pytest.mark.anyio
+    async def test_delete_user(self, user: UserDTO, client: AsyncClient):
 
-        res = client.delete(
-            "v1/user",
+        res = await client.delete(
+            "v1/user/",
             params={
                 "ident": user.ident
             },

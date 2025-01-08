@@ -3,7 +3,9 @@ from naks_library.commiter import SqlAlchemyCommitter
 from jose.exceptions import JWTError, JWTClaimsError
 from fastapi import Request
 
-from app.application.interfaces.gateways import UserGateway, RefreshTokenGateway, PermissionGateway
+import redis.asyncio as redis
+
+from app.application.interfaces.gateways import UserGateway, RefreshTokenGateway, PermissionGateway, RedisGateway
 from app.application.dto import RefreshTokenDTO, CurrentUser
 from app.application.interactors import (
     CreateUserInteractor, 
@@ -28,6 +30,7 @@ from app.application.common.exc import (
 )
 from app.infrastructure.services import PasswordHasher, JwtService
 from app.infrastructure.database.mappers import UserMapper, RefreshTokenMapper, PermissionMapper
+from app.infrastructure.redis.redis_mapper import RedisMapper
 from app.infrastructure.dto import AccessTokenDTO
 
 
@@ -134,6 +137,14 @@ class ApplicationProvider(Provider):
         committer: SqlAlchemyCommitter,
     ) -> PermissionGateway:
         return PermissionMapper(committer.session)
+    
+    
+    @provide(scope=Scope.REQUEST)
+    async def get_redis_gateway(
+        self,
+        redis: redis.Redis,
+    ) -> RedisGateway:
+        return RedisMapper(redis)
 
 
     @provide(scope=Scope.REQUEST)
@@ -261,11 +272,13 @@ class ApplicationProvider(Provider):
     async def provide_validate_access_interactor(
         self,
         user_gateway: UserGateway,
-        permission_gateway: PermissionGateway
+        permission_gateway: PermissionGateway,
+        redis_gateway: RedisGateway
     ) -> ValidateAccessInteractor:
         return ValidateAccessInteractor(
             user_gateway=user_gateway,
-            permission_gateway=permission_gateway
+            permission_gateway=permission_gateway,
+            redis_gateway=redis_gateway
         )
     
     

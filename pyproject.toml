@@ -22,13 +22,14 @@ dishka = "^1.3.0"
 python-dotenv = "^1.0.1"
 black = "^24.10.0"
 naks-library = {git = "https://github.com/Nazhmutdin/naks_library.git"}
+redis = "^5.2.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.3"
-pytest-asyncio = "^0.24.0"
 faker = "^30.6.0"
 httpx = "^0.27.2"
 pytest-dotenv = "^0.5.2"
+anyio = "^4.8.0"
 
 [build-system]
 requires = ["poetry-core"]

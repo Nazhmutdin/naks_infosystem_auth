@@ -1,8 +1,7 @@
-from httpx import Cookies
+from httpx import Cookies, AsyncClient
 import pytest
 from copy import copy
 
-from client import client
 from storage import storage
 from app.application.dto import UserDTO, RefreshTokenDTO
 
@@ -17,11 +16,12 @@ class TestAuthEndpoints:
         "token_data",
         storage.get_expired_refresh_tokens()[:10]
     )
-    def test_failed_authenticate_by_expired_refresh_token(self, token_data: RefreshTokenDTO):
+    @pytest.mark.anyio
+    async def test_failed_authenticate_by_expired_refresh_token(self, token_data: RefreshTokenDTO, client: AsyncClient):
 
         client.cookies["refresh_token"] = token_data.token
 
-        res = client.post(
+        res = await client.post(
             "auth/v1/authenticate"
         )
 
@@ -31,23 +31,25 @@ class TestAuthEndpoints:
     @pytest.mark.parametrize(
         "token_data",
         storage.get_revoked_refresh_tokens()[:5]
-    )
-    def test_failed_authenticate_by_revoked_refresh_token(self, token_data: RefreshTokenDTO):
+    )   
+    @pytest.mark.anyio
+    async def test_failed_authenticate_by_revoked_refresh_token(self, token_data: RefreshTokenDTO, client: AsyncClient):
 
         client.cookies["refresh_token"] = token_data.token
 
-        res = client.post(
+        res = await client.post(
             "auth/v1/authenticate"
         )
 
         assert res.status_code == 403
 
 
-    def test_failed_update_tokens_wothout_refresh_token(self):
+    @pytest.mark.anyio
+    async def test_failed_update_tokens_wothout_refresh_token(self, client: AsyncClient):
 
         del client.cookies["refresh_token"]
 
-        res = client.post(
+        res = await client.post(
             "auth/v1/update-tokens"
         )
 
@@ -57,20 +59,22 @@ class TestAuthEndpoints:
     @pytest.mark.parametrize(
         "token_data",
         storage.get_revoked_refresh_tokens()[:5]
-    )
-    def test_failed_update_tokens_by_revoked_refresh_token(self, token_data: RefreshTokenDTO):
+    )   
+    @pytest.mark.anyio
+    async def test_failed_update_tokens_by_revoked_refresh_token(self, token_data: RefreshTokenDTO, client: AsyncClient):
 
         client.cookies["refresh_token"] = token_data.token
 
-        res = client.post(
+        res = await client.post(
             "auth/v1/update-tokens"
         )
 
         assert res.status_code == 403
         
 
-    def test_failed_authorizate_by_invalid_login(self):
-        res = client.post(
+    @pytest.mark.anyio
+    async def test_failed_authorizate_by_invalid_login(self, client: AsyncClient):
+        res = await client.post(
             "auth/v1/login",
             json={
                 "login": "SomeInvalidLogin",
@@ -84,9 +88,10 @@ class TestAuthEndpoints:
     @pytest.mark.parametrize(
         "user",
         storage.fake_users[:5]
-    )
-    def test_failed_authorizate_by_invalid_password(self, user: UserDTO):
-        res = client.post(
+    )   
+    @pytest.mark.anyio
+    async def test_failed_authorizate_by_invalid_password(self, user: UserDTO, client: AsyncClient):
+        res = await client.post(
             "auth/v1/login",
             json={
                 "login": user.login,
@@ -100,9 +105,10 @@ class TestAuthEndpoints:
     @pytest.mark.parametrize(
         "user",
         storage.fake_users_dicts[:5]
-    )
-    def test_authorizate(self, user: dict):
-        res = client.post(
+    )   
+    @pytest.mark.anyio
+    async def test_authorizate(self, user: dict, client: AsyncClient):
+        res = await client.post(
             "auth/v1/login",
             json={
                 "login": user["login"],
@@ -120,10 +126,11 @@ class TestAuthEndpoints:
         )
 
 
-    def test_authenticate(self):
+    @pytest.mark.anyio
+    async def test_authenticate(self, client: AsyncClient):
         access_token = copy(client.cookies["access_token"])
 
-        res = client.post(
+        res = await client.post(
             "auth/v1/authenticate",
         )
 
@@ -131,11 +138,12 @@ class TestAuthEndpoints:
 
         assert res.cookies.get("access_token") != access_token
     
-    
-    def test_update_tokens(self):
+
+    @pytest.mark.anyio
+    async def test_update_tokens(self, client: AsyncClient):
         refresh_token = copy(client.cookies["refresh_token"])
 
-        res = client.post(
+        res = await client.post(
             "auth/v1/update-tokens",
         )
 
@@ -149,11 +157,12 @@ class TestAuthEndpoints:
     @pytest.mark.parametrize(
         "user",
         storage.fake_users_dicts[1:]
-    )
-    def test_aproved_access(self, user: dict):
+    )   
+    @pytest.mark.anyio
+    async def test_aproved_access(self, user: dict, client: AsyncClient):
         permissions = storage.get_user_permission(user["ident"])
 
-        res = client.post(
+        res = await client.post(
             "auth/v1/login",
             json={
                 "login": user["login"],
@@ -210,7 +219,7 @@ class TestAuthEndpoints:
                 uri = "/v1/acst"
              
 
-            res = client.post(
+            res = await client.post(
                 "auth/v1/validate-access",
 
                 headers={
@@ -225,11 +234,12 @@ class TestAuthEndpoints:
     @pytest.mark.parametrize(
         "user",
         storage.fake_users_dicts[1:]
-    )
-    def test_denied_access(self, user: dict):
+    )   
+    @pytest.mark.anyio
+    async def test_denied_access(self, user: dict, client: AsyncClient):
         permissions = storage.get_user_permission(user["ident"])
 
-        res = client.post(
+        res = await client.post(
             "auth/v1/login",
             json={
                 "login": user["login"],
@@ -250,6 +260,7 @@ class TestAuthEndpoints:
             if key in [
                 "ident", 
                 "user_ident", 
+                "is_super_user",
                 "acst_file_download", 
                 "acst_file_upload", 
                 "personal_naks_certification_file_download", 
@@ -286,7 +297,7 @@ class TestAuthEndpoints:
                 uri = "/v1/acst"
              
 
-            res = client.post(
+            res = await client.post(
                 "auth/v1/validate-access",
 
                 headers={
@@ -298,9 +309,10 @@ class TestAuthEndpoints:
             assert res.status_code == 403
 
 
-    def test_logout(self):
+    @pytest.mark.anyio
+    async def test_logout(self, client: AsyncClient):
 
-        res = client.post(
+        res = await client.post(
             "auth/v1/logout"
         )
 
