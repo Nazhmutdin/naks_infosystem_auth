@@ -27,6 +27,9 @@ async def user_not_found_handler(
         content={
             "code": exception.code,
             "detail": f"user ({exception.ident}) not found"
+        },
+        headers={
+            "X-Auth-Code": exception.code
         }
     )
 
@@ -40,6 +43,9 @@ async def invalid_password_handler(
         content={
             "code": exception.code,
             "detail": "invalid password"
+        },
+        headers={
+            "X-Auth-Code": exception.code
         }
     )
 
@@ -53,6 +59,9 @@ async def invalid_refresh_token_handler(
         content={
             "code": exception.code,
             "detail": "invalid refresh token"
+        },
+        headers={
+            "X-Auth-Code": exception.code
         }
     )
 
@@ -66,6 +75,9 @@ async def invalid_access_token_handler(
         content={
             "code": exception.code,
             "detail": "invalid access token"
+        },
+        headers={
+            "X-Auth-Code": exception.code
         }
     )
 
@@ -79,6 +91,9 @@ async def access_forbidden_handler(
         content={
             "code": exception.code,
             "detail": "access forbidden"
+        },
+        headers={
+            "X-Auth-Code": exception.code
         }
     )
 
@@ -92,6 +107,9 @@ async def refresh_token_cookie_not_found_handler(
         content={
             "code": exception.code,
             "detail": "refresh token cookie not found"
+        },
+        headers={
+            "X-Auth-Code": exception.code
         }
     )
 
@@ -105,6 +123,9 @@ async def access_token_cookie_not_found_handler(
         content={
             "code": exception.code,
             "detail": "access token cookie not found"
+        },
+        headers={
+            "X-Auth-Code": exception.code
         }
     )
 
@@ -118,6 +139,9 @@ async def refresh_token_not_found_handler(
         content={
             "code": exception.code,
             "detail": f"refresh token ({exception.ident}) not found"
+        },
+        headers={
+            "X-Auth-Code": exception.code
         }
     )
 
@@ -131,6 +155,9 @@ async def refresh_token_revoked_handler(
         content={
             "code": exception.code,
             "detail": "refresh token revoked"
+        },
+        headers={
+            "X-Auth-Code": exception.code
         }
     )
 
@@ -144,6 +171,9 @@ async def refresh_token_expired_handler(
         content={
             "code": exception.code,
             "detail": "refresh token expired"
+        },
+        headers={
+            "X-Auth-Code": exception.code
         }
     )
 
@@ -157,6 +187,9 @@ async def permission_data_not_found_handler(
         content={
             "code": exception.code,
             "detail": f"internal error; permissions for user ({exception.user_ident}) don't exist"
+        },
+        headers={
+            "X-Auth-Code": exception.code
         }
     )
 
@@ -169,6 +202,9 @@ async def original_method_not_found_handler(
         content={
             "code": exception.code,
             "detail": "internal error; original method header doesn't present"
+        },
+        headers={
+            "X-Auth-Code": exception.code
         }
     )
 
@@ -181,6 +217,8 @@ async def original_uri_not_found_handler(
         content={
             "code": exception.code,
             "detail": "internal error; original uri header doesn't present"
+        },
+        headers={
+            "X-Auth-Code": exception.code
         }
     )
-
